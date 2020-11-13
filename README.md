@@ -2,6 +2,8 @@
 
 An automated system to measure sewer pipe defects. This is an universal system could be used in any operating system, Windows, Linux and Mac OS.
 
+![screenshots](./screenshots/interface.png)
+
 ### Dependencies
 
 - python3
