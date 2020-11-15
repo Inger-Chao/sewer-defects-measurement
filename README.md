@@ -2,7 +2,7 @@
 
 An automated system to measure sewer pipe defects. This is an universal system could be used in any operating system, Windows, Linux and Mac OS.
 
-![screenshots](./screenshots/interface.png)
+<img src="./screenshots/interface.png" alt="screenshots" style="zoom:33%;" />
 
 ### Dependencies
 
