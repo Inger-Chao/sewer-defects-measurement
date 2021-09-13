@@ -1,3 +1,6 @@
 res
 .idea
 __pycache__
+*.DS_Store
+dl_model
+*/JPEGImages
