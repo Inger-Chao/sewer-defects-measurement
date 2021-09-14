@@ -4,9 +4,6 @@
 
 conf = {
     "path": "datasets/json",
-    "classifier": "cascade",
-    "coefficient": 1.2,
-    "minArea": 40000
 }
 
 yolo_config = {
@@ -20,4 +17,16 @@ yolo_config = {
     "cuda"              : False,
     # resize image
     "letterbox_image"   : False,
+}
+
+edge_config = {
+    # canny threshold param
+    "canny_threshold1": 142,
+    "canny_threshold2": 146,
+    "coefficient": 4,
+    "min_area": 9220,
+    # promise one picture detect one circle
+    "hough_min_dist": 2000,
+    "hough_min_radius": 64,
+    "hough_max_radius": 640
 }

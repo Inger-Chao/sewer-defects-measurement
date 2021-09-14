@@ -8,6 +8,7 @@ from data_loader import DataLoader
 from utils.cv_util import stackImages
 from utils.utils import opencvToPIllow, pil2Opencv
 from detector.defects_detector import YOLO
+from config import edge_config
 
 def empty(a):
     pass
@@ -18,10 +19,10 @@ cv2.namedWindow("Parameters")
 cv2.resizeWindow("Parameters",640,240)
 # cv2.namedWindow("APC")
 # cv2.resizeWindow("APC", 640, 240)
-cv2.createTrackbar("Threshold1","Parameters",23,255,empty)
-cv2.createTrackbar("Threshold2","Parameters",20,255,empty)
-cv2.createTrackbar("Coefficient", "Parameters", 11, 20, empty)
-cv2.createTrackbar("Area","Parameters",5000,30000,empty)
+cv2.createTrackbar("Threshold1","Parameters", edge_config.get("canny_threshold1"),255,empty)
+cv2.createTrackbar("Threshold2","Parameters",edge_config.get("canny_threshold2"),255,empty)
+cv2.createTrackbar("Coefficient", "Parameters", edge_config.get("coefficient"), 20, empty)
+cv2.createTrackbar("Area","Parameters",edge_config.get("min_area"),30000,empty)
 
 def defectsLevel(defectArea, pipeArea):
     defects_ratio = defectArea / pipeArea
@@ -77,16 +78,18 @@ def main():
             if defects_feature != None :
                 for defect in defects_feature:
                     defect_area = img[defect[1]:defect[3], defect[2]:defect[4]]
+                    defect_copy = defect_area.copy()
                     cv2.imshow("defect area", defect_area)
                     defect_canny = cv2.Canny(defect_area, threshold1, threshold2)
                     
                     defect_dil = cv2.dilate(defect_canny, kernel, iterations=1)
-                    getContours(defect_dil, coefficient, grayedPipe, imgCopy)
+                    getContours(defect_dil, coefficient, grayedPipe, defect_copy)
+                    imgCopy[defect[1]:defect[3], defect[2]:defect[4]] = defect_copy
             else:
                 imgDil = cv2.dilate(imgCanny, kernel, iterations=1) 
                 getContours(imgDil, coefficient, grayedPipe, imgCopy)
             imgStack = stackImages(0.4, ([img, imgCanny],
-                                         [imgYolo, imgCopy]))
+                                            [imgYolo, imgCopy]))
             cv2.imshow("Parameters", imgStack)
             if cv2.waitKey(10) & 0xFF == ord("q"):
                 break

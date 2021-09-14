@@ -8,6 +8,7 @@ import os.path as osp
 from utils.cv_util import stackImages
 from utils.utils import opencvToPIllow, pil2Opencv
 from detector.defects_detector import YOLO
+from config import edge_config
 
 def pixDis(a1, b1, a2, b2):
     # distance between points(pixels)
@@ -27,11 +28,13 @@ def PipeCircle(frame):
     mask = frame.copy()
     frame = cv2.GaussianBlur(frame, (5, 5), 0)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    canny = cv2.Canny(gray, 100, 50)
+    canny = cv2.Canny(gray, edge_config.get("canny_threshold1"), edge_config.get("canny_threshold2"))
     kernel = np.ones((5, 5))
     dil = cv2.dilate(canny, kernel, iterations=1) 
-    circles = cv2.HoughCircles(dil,cv2.HOUGH_GRADIENT,2,800,
-                            param1=100,param2=50,minRadius=200,maxRadius=800)
+    cv2.imshow("binary image", dil)
+    circles = cv2.HoughCircles(dil,cv2.HOUGH_GRADIENT,2, edge_config.get("hough_min_dist"),
+                            param1=100,param2=50,minRadius=edge_config.get("hough_min_radius"),
+                            maxRadius=edge_config.get("hough_max_radius"))
     circles = np.uint16(np.around(circles))
     for i in circles[0,:]:
         # circle(img, center, radius, color, thickness=-1)

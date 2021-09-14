@@ -9,6 +9,11 @@ An automated system to measure sewer pipe defects. This is an universal system c
 - python3
 - opencv
 
+### script description
+
+- processer.py: for SongbaiRoad.
+  - FRAMES: 1. original image, 2. edge information, 3. Yolo defects detector 4. results
+- pipe_calibration.py: run this script will show the calibrated pipe and a defects detector.
 
 ### How to use?
 
@@ -17,7 +22,6 @@ An automated system to measure sewer pipe defects. This is an universal system c
 
 ```bash
 pip3 install requirements.txt
-
 ```
 
 - Run the processer
