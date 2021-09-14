@@ -57,7 +57,6 @@ def getContours(img, w, pipe,imgContour):
             print("Level: " + str(area/pipeArea))
 
 
-
 def main():
     imgs, pipes = DataLoader()
     for id, img in enumerate(imgs):
@@ -82,10 +81,10 @@ def main():
                     defect_canny = cv2.Canny(defect_area, threshold1, threshold2)
                     
                     defect_dil = cv2.dilate(defect_canny, kernel, iterations=1)
-                    getContours(defect_dil, coefficient, grayedPipe ,imgCopy)
+                    getContours(defect_dil, coefficient, grayedPipe, imgCopy)
             else:
                 imgDil = cv2.dilate(imgCanny, kernel, iterations=1) 
-                getContours(imgDil, coefficient, grayedPipe ,imgCopy)
+                getContours(imgDil, coefficient, grayedPipe, imgCopy)
             imgStack = stackImages(0.4, ([img, imgCanny],
                                          [imgYolo, imgCopy]))
             cv2.imshow("Parameters", imgStack)
