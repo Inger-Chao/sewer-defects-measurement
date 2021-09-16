@@ -23,40 +23,43 @@ def nothing(x):
 font = cv2.FONT_HERSHEY_COMPLEX
 
 global center
+window_caption = 'Pipe Calibrator'
+cv2.namedWindow(window_caption)
 
 def PipeCircle(frame):
+    mindist = max(frame.shape[0], frame.shape[1])
     mask = frame.copy()
     frame = cv2.GaussianBlur(frame, (5, 5), 0)
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     canny = cv2.Canny(gray, edge_config.get("canny_threshold1"), edge_config.get("canny_threshold2"))
-    kernel = np.ones((5, 5))
-    dil = cv2.dilate(canny, kernel, iterations=1) 
-    cv2.imshow("binary image", dil)
-    circles = cv2.HoughCircles(dil,cv2.HOUGH_GRADIENT,2, edge_config.get("hough_min_dist"),
-                            param1=255,param2=50,minRadius=edge_config.get("hough_min_radius"),
+    circles = cv2.HoughCircles(canny,cv2.HOUGH_GRADIENT, edge_config.get("hough_dp"), mindist,
+                            param1=100,param2=50,minRadius=edge_config.get("hough_min_radius"),
                             maxRadius=edge_config.get("hough_max_radius"))
     circles = np.uint16(np.around(circles))
-    assert len(circles) == 1, 'There are more that one circle detected!'
+
+    #assert len(circles[0,:]) == 1, 'There are more that one circle detected!'
     '''
     circles[0] is the calibrated base value.
     return value.(i[0], i[1]) is center, and i[2] is radius.
     the following code for draw the calibrated pipe circle in the copy image.
     '''
-    circle = circles[0]
+    for calibrated_pipe in circles[0,:]:
+        center = (calibrated_pipe[0],calibrated_pipe[1])
+        radius = calibrated_pipe[2]
         # circle(img, center, radius, color, thickness=-1)
-    cv2.circle(mask, (circle[0],circle[1]), circle[2], (0,255,0), 2)
-    cv2.circle(mask, (circle[0],circle[1]), 2, (0,0,255), 3)
-    return mask, circle
+        cv2.circle(mask, center, radius, (0,255,0), 2)
+        cv2.circle(mask, center, 2, (0,0,255), 3)
+    return mask, calibrated_pipe
 
 def ShowVideos(video_path):
     cap = cv2.VideoCapture(video_path)
 
     while True:
         ret, frame = cap.read()
-        mask = PipeCircle(frame)
+        mask, _ = PipeCircle(frame)
 
         imgStack = stackImages(0.3, ([frame, mask]))
-        cv2.imshow("Parameters", imgStack)
+        cv2.imshow(window_caption, imgStack)
 
         key = cv2.waitKey(1)
         if key == 27:
@@ -75,7 +78,7 @@ def ShowImages(images):
         defects, _ = yolo.detect_image(opencvToPIllow(image))
         result = pil2Opencv(defects)
         imgStack = stackImages(0.3, ([mask, result]))
-        cv2.imshow("Pipe Calibrator", imgStack)
+        cv2.imshow(window_caption, imgStack)
         cv2.waitKey()
     cv2.destroyAllWindows()
 

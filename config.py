@@ -4,7 +4,7 @@
 
 conf = {
     "path": "datasets/json",
-    "datasets": "datasets/sewer10/bx"
+    "datasets": "datasets/sewer10/zhaw"
 }
 
 yolo_config = {
@@ -26,8 +26,8 @@ edge_config = {
     "canny_threshold2": 146,
     "coefficient": 4,
     "min_area": 9220,
-    # promise one picture detect one circle
-    "hough_min_dist": 2000,
+    "hough_dp": 2,
+    "hough_min_dist": 480,
     "hough_min_radius": 64,
     "hough_max_radius": 640
 }
