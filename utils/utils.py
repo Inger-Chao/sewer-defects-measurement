@@ -387,6 +387,5 @@ def pil2Opencv(pil_image):
     if isinstance(pil_image, np.ndarray):
         return pil_image
     else:
-        print(type(np.asarray(pil_image, dtype=object)))
         cv2_image = cv2.cvtColor(np.asarray(pil_image), cv2.COLOR_RGB2BGR)
         return cv2_image

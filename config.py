@@ -4,6 +4,7 @@
 
 conf = {
     "path": "datasets/json",
+    "datasets": "datasets/sewer10/bx"
 }
 
 yolo_config = {
