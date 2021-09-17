@@ -9,6 +9,7 @@ from utils.cv_util import stackImages
 from utils.utils import opencvToPIllow, pil2Opencv
 from detector.defects_detector import YOLO
 from config import edge_config, conf
+from thinker.thinker import Defect, Thinker
 
 def pixDis(a1, b1, a2, b2):
     # distance between points(pixels)
@@ -37,7 +38,7 @@ def PipeCircle(frame):
                             maxRadius=edge_config.get("hough_max_radius"))
     circles = np.uint16(np.around(circles))
 
-    #assert len(circles[0,:]) == 1, 'There are more that one circle detected!'
+    assert len(circles[0,:]) == 1, 'There are more that one circle detected!'
     '''
     circles[0] is the calibrated base value.
     return value.(i[0], i[1]) is center, and i[2] is radius.
@@ -49,7 +50,7 @@ def PipeCircle(frame):
         # circle(img, center, radius, color, thickness=-1)
         cv2.circle(mask, center, radius, (0,255,0), 2)
         cv2.circle(mask, center, 2, (0,0,255), 3)
-    return mask, calibrated_pipe
+    return mask, circles[0,:]
 
 def ShowVideos(video_path):
     cap = cv2.VideoCapture(video_path)
@@ -74,9 +75,16 @@ def ShowImages(images):
     for file in images:
         print('==>Processing: ', file)
         image = cv2.imread(file)
-        mask, _ = PipeCircle(image)
-        defects, _ = yolo.detect_image(opencvToPIllow(image))
+        mask, circles = PipeCircle(image)
+        defects, features = yolo.detect_image(opencvToPIllow(image))
         result = pil2Opencv(defects)
+        detected = []
+        if features != None:
+            for feat in features:
+                dft = Defect(feat[0], image[feat[1]:feat[3], feat[2]:feat[4]])
+                detected.append(dft)
+            thinker = Thinker(circles[0], detected)
+            thinker.defect_proportion()
         imgStack = stackImages(0.3, ([mask, result]))
         cv2.imshow(window_caption, imgStack)
         cv2.waitKey()
