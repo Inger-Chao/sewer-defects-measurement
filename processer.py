@@ -75,7 +75,6 @@ def main():
         while True:
             imgCanny = cv2.Canny(grayed, canny_threshold1, canny_threshold2)
             kernel = np.ones((5, 5))
-            img_not = cv2.bitwise_not(imgCanny)
 
             coefficient = cv2.getTrackbarPos("Coefficient", "Parameters")
             if defects_feature != None :
@@ -92,7 +91,7 @@ def main():
                 imgDil = cv2.dilate(imgCanny, kernel, iterations=1) 
                 getContours(imgDil, coefficient, grayedPipe, imgCopy)
             imgStack = stackImages(0.4, ([img, imgCanny],
-                                            [img_not, imgCopy]))
+                                            [imgYolo, imgCopy]))
             cv2.imshow("Parameters", imgStack)
             if cv2.waitKey(10) & 0xFF == ord("q"):
                 break
