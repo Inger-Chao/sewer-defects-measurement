@@ -45,7 +45,7 @@ def getContours(img, w, pipe,imgContour):
     for cnt in contours:
         area = cv2.contourArea(cnt)
         if area > min_area:
-            cv2.drawContours(imgContour, cnt, -1, (255, 0, 255), 7)
+            cv2.drawContours(imgContour, cnt, -1, (255, 0, 255), 2)
             peri = cv2.arcLength(cnt, True)
             approx = cv2.approxPolyDP(cnt, 0.02 * peri, True)
             # print the quantity of points
@@ -61,7 +61,6 @@ def getContours(img, w, pipe,imgContour):
                         cv2.FONT_HERSHEY_COMPLEX, .7,(0, 255, 0), 2 )
             print("Level: " + str(area/pipeArea))
 
-
 def main():
     imgs, pipes = DataLoader()
     for id, img in enumerate(imgs):
@@ -73,8 +72,11 @@ def main():
         imgYolo = pil2Opencv(imgYolo)
         imgCopy = img.copy()
         while True:
+            canny_threshold1 = cv2.getTrackbarPos("Threshold1","Parameters")
+            canny_threshold2 = cv2.getTrackbarPos("Threshold2","Parameters")
             imgCanny = cv2.Canny(grayed, canny_threshold1, canny_threshold2)
             kernel = np.ones((5, 5))
+            imgDil = cv2.dilate(imgCanny, kernel, iterations=1) 
 
             coefficient = cv2.getTrackbarPos("Coefficient", "Parameters")
             if defects_feature != None :
@@ -88,10 +90,9 @@ def main():
                     getContours(defect_dil, coefficient, grayedPipe, defect_copy)
                     imgCopy[defect[1]:defect[3], defect[2]:defect[4]] = defect_copy
             else:
-                imgDil = cv2.dilate(imgCanny, kernel, iterations=1) 
                 getContours(imgDil, coefficient, grayedPipe, imgCopy)
-            imgStack = stackImages(0.4, ([img, imgCanny],
-                                            [imgYolo, imgCopy]))
+            imgStack = stackImages(0.4, ([imgYolo, imgCanny],
+                                            [imgDil, imgCopy]))
             cv2.imshow("Parameters", imgStack)
             if cv2.waitKey(10) & 0xFF == ord("q"):
                 break

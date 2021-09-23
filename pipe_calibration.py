@@ -34,7 +34,7 @@ def PipeCircle(frame):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     canny = cv2.Canny(gray, edge_config.get("canny_threshold1"), edge_config.get("canny_threshold2"))
     circles = cv2.HoughCircles(canny,cv2.HOUGH_GRADIENT, edge_config.get("hough_dp"), mindist,
-                            param1=100,param2=50,minRadius=edge_config.get("hough_min_radius"),
+                            param1=edge_config.get("canny_threshold1"),param2=edge_config.get("canny_threshold2"),minRadius=edge_config.get("hough_min_radius"),
                             maxRadius=edge_config.get("hough_max_radius"))
     circles = np.uint16(np.around(circles))
 
@@ -44,13 +44,17 @@ def PipeCircle(frame):
     return value.(i[0], i[1]) is center, and i[2] is radius.
     the following code for draw the calibrated pipe circle in the copy image.
     '''
-    for calibrated_pipe in circles[0,:]:
-        center = (calibrated_pipe[0],calibrated_pipe[1])
-        radius = calibrated_pipe[2]
-        # circle(img, center, radius, color, thickness=-1)
-        cv2.circle(mask, center, radius, (0,255,0), 2)
-        cv2.circle(mask, center, 2, (0,0,255), 3)
-    return mask, circles[0,:]
+    calibrated_pipe = circles[0,:][0]
+    center = (calibrated_pipe[0],calibrated_pipe[1])
+    radius = calibrated_pipe[2]
+    pipe = np.zeros((radius * 2, radius * 2),dtype=np.uint8)
+    cv2.circle(pipe, (radius, radius), radius, 255, -1)
+    cv2.floodFill(pipe, None, (radius, radius), 255, 0,1)
+    # circle(img, center, radius, color, thickness=-1)
+    cv2.circle(mask, center, radius, (0,255,0), 2)
+    cv2.circle(mask, center, 2, (0,0,255), 3)
+    # cv2.imshow("pipe", pipe)
+    return mask, pipe
 
 def ShowVideos(video_path):
     cap = cv2.VideoCapture(video_path)
@@ -75,7 +79,7 @@ def ShowImages(images):
     for file in images:
         print('==>Processing: ', file)
         image = cv2.imread(file)
-        mask, circles = PipeCircle(image)
+        mask, pipe = PipeCircle(image)
         defects, features = yolo.detect_image(opencvToPIllow(image))
         result = pil2Opencv(defects)
         detected = []
@@ -83,7 +87,7 @@ def ShowImages(images):
             for feat in features:
                 dft = Defect(feat[0], image[feat[1]:feat[3], feat[2]:feat[4]])
                 detected.append(dft)
-            thinker = Thinker(circles[0], detected)
+            thinker = Thinker(pipe, detected)
             thinker.defect_proportion()
         imgStack = stackImages(0.3, ([mask, result]))
         cv2.imshow(window_caption, imgStack)

@@ -12,7 +12,7 @@ yolo_config = {
     "anchors_path"      : 'dl_model/yolo_anchors.txt',
     "classes_path"      : 'dl_model/DEFECTS.txt',
     "model_image_size"  : (416, 416, 3),
-    "confidence"        : 0.8,
+    "confidence"        : 0.5,
     "iou"               : 0.3,
     # GPU: True, CPU: False
     "cuda"              : False,

@@ -7,6 +7,10 @@ class Defect:
     def __init__(self, name, image) -> None:
         self.name = name
         self.image = image
+    
+    def get_rank(self):
+        res = 0
+        return 0
 
 class Thinker:
     def __init__(self, pipe, defects) -> None:
@@ -30,7 +34,7 @@ class Thinker:
                 return area
     
     def defect_proportion(self):
-        pipe_base = math.pi * pow(self.pipe[2], 2)
+        pipe_base = self.pipe.sum() / 255
         for feature in self.defects:
             name = feature.name
             area = self.defect_area(feature.image)
