@@ -26,16 +26,18 @@ class Thinker:
         canny = cv2.Canny(grayed, edge_config.get("canny_threshold1"), edge_config.get("canny_threshold2"))
         kernel = np.ones((5, 5))
         dil = cv2.dilate(canny, kernel, iterations=1)
+        area = 0
         contours, hierarchy = cv2.findContours(dil, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         for cnt in contours:
-            area = cv2.contourArea(cnt)
-            if area > edge_config.get("min_area"):
-                cv2.drawContours(image, cnt, -1, (255, 0, 255), 7)
-                return area
+            cv2.drawContours(image, cnt, -1, (255, 0, 255), 1)
+        cv2.imshow("contours", image)
+        area = max(cv2.contourArea(cnt) for cnt in contours )
+        return area
     
     def defect_proportion(self):
         pipe_base = self.pipe.sum() / 255
         for feature in self.defects:
             name = feature.name
             area = self.defect_area(feature.image)
-            print('Detected class: ', name, ' Defect Rank: ', area/pipe_base)
+            rank = np.float(area / pipe_base)
+            print('Detected class: ', name, ' Defect Rank: ', rank)

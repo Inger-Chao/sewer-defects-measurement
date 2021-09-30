@@ -4,7 +4,7 @@
 
 conf = {
     "path": "datasets/json",
-    "datasets": "datasets/sewer10/zhaw"
+    "datasets": "datasets/sewer10/pl"
 }
 
 yolo_config = {
@@ -29,5 +29,6 @@ edge_config = {
     "hough_dp": 2,
     "hough_min_dist": 480,
     "hough_min_radius": 64,
-    "hough_max_radius": 640
+    "hough_max_radius": 640,
+    "defect_min_area": 800
 }

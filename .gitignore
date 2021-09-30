@@ -4,3 +4,4 @@ __pycache__
 *.DS_Store
 dl_model
 datasets/sewer10
+*实验中间结果*
