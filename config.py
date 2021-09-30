@@ -28,7 +28,7 @@ edge_config = {
     "min_area": 9220,
     "hough_dp": 2,
     "hough_min_dist": 480,
-    "hough_min_radius": 64,
+    "hough_min_radius": 32,
     "hough_max_radius": 640,
     "defect_min_area": 800
 }

@@ -44,17 +44,46 @@ def drawCircle(frame, hough_circles):
             cv2.imshow("first calibrated pipe", mask)
     cv2.imshow("optimize circle", mask)
 
+def ReturnedCircle(mask, hough_circle):
+    calibrated_pipe = hough_circle[0] # 取所有行的第 0 列元素
+    center = (calibrated_pipe[0],calibrated_pipe[1])
+    radius = calibrated_pipe[2]
+    pipe = np.zeros((radius * 2, radius * 2),dtype=np.uint8)
+    cv2.circle(pipe, (radius, radius), radius, 255, -1)
+    cv2.floodFill(pipe, None, (radius, radius), 255, 0,1)
+    cv2.circle(mask, center, radius, (0,255,0), 2)
+    cv2.circle(mask, center, 2, (0,0,255), 3)
+    # cv2.imshow("pipe", pipe)
+    return mask, pipe
+
+'''设置 mindist，确保生成 1 个拟合管道的拟合方式'''
+def PipeCircle(frame):
+    mindist = max(frame.shape[0], frame.shape[1])
+    mask = frame.copy()
+    canny = Preprocess(frame)
+    circles = cv2.HoughCircles(canny,cv2.HOUGH_GRADIENT, edge_config.get("hough_dp"), mindist,
+                            param1=edge_config.get("canny_threshold1"),
+                            param2=edge_config.get("canny_threshold2"),
+                            minRadius=edge_config.get("hough_min_radius"),
+                            maxRadius=edge_config.get("hough_max_radius"))
+    if circles is None:
+        return PipeCenterRestrictor(frame)
+    circles = np.uint16(np.around(circles))
+    circles = circles.reshape((circles.shape[1], circles.shape[2]))
+    drawCircle(frame, circles)
+    return ReturnedCircle(mask, circles)
+
 '''
 限制缺陷中心点的标定方式
 '''
 def PipeRadiusRestrictor(frame, defect):
-    mindist = max(frame.shape[0], frame.shape[1])
     canny = Preprocess(frame)
+    cv2.imshow("canny", canny)
     defect_center_x = (defect[1] + defect[3]) / 2
     defect_center_y = (defect[2] + defect[4]) / 2
-    distance = pixDis(defect_center_x, defect_center_y, frame.shape[0] / 2, frame.shape[1]/2)
+    distance = pixDis(defect_center_x, defect_center_y, frame.shape[0]/2, frame.shape[1]/2)
     mask = frame.copy()
-    circles = cv2.HoughCircles(canny,cv2.HOUGH_GRADIENT, edge_config.get("hough_dp"), 2,
+    circles = cv2.HoughCircles(canny,cv2.HOUGH_GRADIENT, edge_config.get("hough_dp"), 5,
                             param1=edge_config.get("canny_threshold1"),param2=edge_config.get("canny_threshold2"),
                             minRadius=(int)(distance) - 50, maxRadius=int(distance) + 50)
     if circles is None:
@@ -63,45 +92,30 @@ def PipeRadiusRestrictor(frame, defect):
     # reshape [1, i, 3] to [i, 3]
     circles = circles.reshape((circles.shape[1], circles.shape[2]))
     circles = sorted(circles, key=lambda circle:abs(circle[2] - distance))
+    circles = circles[0:len(circles)-1:100]
     drawCircle(frame, circles)
-    calibrated_pipe = circles[0] # 取所有行的第 0 列元素
-    center = (calibrated_pipe[0],calibrated_pipe[1])
-    radius = calibrated_pipe[2]
-    pipe = np.zeros((radius * 2, radius * 2),dtype=np.uint8)
-    cv2.circle(pipe, (radius, radius), radius, 255, -1)
-    cv2.floodFill(pipe, None, (radius, radius), 255, 0,1)
-    cv2.circle(mask, center, radius, (0,255,0), 2)
-    cv2.circle(mask, center, 2, (0,0,255), 3)
-    # cv2.imshow("pipe", pipe)
-    return mask, pipe
+    return ReturnedCircle(mask, circles)
 
-def PipeCircle(frame):
-    mindist = max(frame.shape[0], frame.shape[1])
+''' 依据距离图像中心最近的排序方式限制标定管道位置 '''
+def PipeCenterRestrictor(frame):
     mask = frame.copy()
     canny = Preprocess(frame)
-    circles = cv2.HoughCircles(canny,cv2.HOUGH_GRADIENT, edge_config.get("hough_dp"), 2,
-                            param1=edge_config.get("canny_threshold1"),param2=edge_config.get("canny_threshold2"),minRadius=edge_config.get("hough_min_radius"),
+    circles = cv2.HoughCircles(canny,cv2.HOUGH_GRADIENT, edge_config.get("hough_dp"), 5,
+                            param1=edge_config.get("canny_threshold1"),
+                            param2=edge_config.get("canny_threshold2"),
+                            minRadius=edge_config.get("hough_min_radius"),
                             maxRadius=edge_config.get("hough_max_radius"))
     circles = np.uint16(np.around(circles))
     circles = circles.reshape((circles.shape[1], circles.shape[2]))
-    circles = sorted(circles, key=lambda circle:pixDis(circle[0], circle[1], frame.shape[0]/2, frame.shape[1]/2))
-
+    circles = sorted(circles, key=lambda circle:pixDis(circle[0], circle[1], frame.shape[1]/2, frame.shape[0]/2))
+    circles = circles[0:len(circles)-1:100]
+    drawCircle(frame, circles)
     '''
     circles[0] is the calibrated base value.
     return value.(i[0], i[1]) is center, and i[2] is radius.
     the following code for draw the calibrated pipe circle in the copy image.
     '''
-    calibrated_pipe = circles[0]
-    center = (calibrated_pipe[0],calibrated_pipe[1])
-    radius = calibrated_pipe[2]
-    pipe = np.zeros((radius * 2, radius * 2),dtype=np.uint8)
-    cv2.circle(pipe, (radius, radius), radius, 255, -1)
-    cv2.floodFill(pipe, None, (radius, radius), 255, 0,1)
-    # circle(img, center, radius, color, thickness=-1)
-    cv2.circle(mask, center, radius, (0,255,0), 2)
-    cv2.circle(mask, center, 2, (0,0,255), 3)
-    # cv2.imshow("pipe", pipe)
-    return mask, pipe
+    return ReturnedCircle(mask, circles)
 
 def ShowVideos(video_path):
     cap = cv2.VideoCapture(video_path)
@@ -130,8 +144,11 @@ def ShowImages(images):
         result = pil2Opencv(defects)
         detected = []
         if features != None:
-            for feat in features:
+            if len(features) == 1:
                 mask, pipe = PipeRadiusRestrictor(image, feat)
+            else:
+                mask, pipe = PipeCircle(image)
+            for feat in features:
                 dft = Defect(feat[0], image[feat[1]:feat[3], feat[2]:feat[4]])
                 detected.append(dft)
             thinker = Thinker(pipe, detected)
