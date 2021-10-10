@@ -20,3 +20,7 @@ def DataLoader():
         imgs.append(img)
         pipes.append(pipe)
     return imgs, pipes
+
+def load_data(path, cache=True):
+    label = list()
+    

@@ -389,3 +389,17 @@ def pil2Opencv(pil_image):
     else:
         cv2_image = cv2.cvtColor(np.asarray(pil_image), cv2.COLOR_RGB2BGR)
         return cv2_image
+
+def isImageFile(filename):
+   imgType_list = {'.jpg', '.bmp', '.png', '.jpeg', '.rgb', '.tif'}
+   for item in imgType_list:
+      if(item in filename):
+         return True
+   return False
+
+def isVideoFile(filename):
+   videoType_list = {'.mp4', '.mov', '.avi'};
+   for item in videoType_list:
+      if (item in filename):
+         return True
+   return False

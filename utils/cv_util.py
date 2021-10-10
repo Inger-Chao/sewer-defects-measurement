@@ -2,6 +2,8 @@
 # @Time    : 2021-09-06 15:10
 # @Author  : Inger
 import numpy as np
+import os
+import os.path as osp
 import cv2
 
 def stackImages(scale,imgArray):
@@ -34,3 +36,20 @@ def stackImages(scale,imgArray):
         hor= np.hstack(imgArray)
         ver = hor
     return ver
+
+def pixDis(a1, b1, a2, b2):
+    # distance between points(pixels)
+    y = b2 - b1
+    x = a2 - a1
+    return np.sqrt(x * x + y * y)
+
+def empty(a):
+    pass
+
+def save_image(filename, mat):
+    if osp.exists(filename):
+        return
+    try:
+        cv2.imwrite(filename, mat)
+    except:
+        print('fail to save ', filename)

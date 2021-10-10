@@ -5,27 +5,18 @@ import cv2
 import numpy as np
 import os
 import os.path as osp
-from utils.cv_util import stackImages
-from utils.utils import opencvToPIllow, pil2Opencv
+from utils.cv_util import save_image, stackImages, pixDis
+from utils.utils import opencvToPIllow, pil2Opencv, isImageFile
 from detector.defects_detector import YOLO
 from config import edge_config, conf
 from thinker.thinker import Defect, Thinker
 
-def pixDis(a1, b1, a2, b2):
-    # distance between points(pixels)
-    y = b2 - b1
-    x = a2 - a1
-    return np.sqrt(x * x + y * y)
-
-def nothing(x):
-    # any operation
-    pass
 
 font = cv2.FONT_HERSHEY_COMPLEX
 
 global center
 window_caption = 'Pipe Calibrator'
-cv2.namedWindow(window_caption)
+# cv2.namedWindow(window_caption)
 
 def Preprocess(frame):
     frame = cv2.GaussianBlur(frame, (5, 5), 0)
@@ -45,6 +36,8 @@ def drawCircle(frame, hough_circles):
     cv2.imshow("optimize circle", mask)
 
 def ReturnedCircle(mask, hough_circle):
+    if len(hough_circle) == 0:
+        return mask, None
     calibrated_pipe = hough_circle[0] # 取所有行的第 0 列元素
     center = (calibrated_pipe[0],calibrated_pipe[1])
     radius = calibrated_pipe[2]
@@ -70,7 +63,10 @@ def PipeCircle(frame):
         return PipeCenterRestrictor(frame)
     circles = np.uint16(np.around(circles))
     circles = circles.reshape((circles.shape[1], circles.shape[2]))
-    drawCircle(frame, circles)
+    center_distance = pixDis(circles[0][0], circles[0][1], frame.shape[1]/2, frame.shape[0]/2)
+    if(center_distance > 50): 
+        return PipeCenterRestrictor(frame)
+    # drawCircle(frame, circles)
     return ReturnedCircle(mask, circles)
 
 '''
@@ -78,10 +74,9 @@ def PipeCircle(frame):
 '''
 def PipeRadiusRestrictor(frame, defect):
     canny = Preprocess(frame)
-    cv2.imshow("canny", canny)
     defect_center_x = (defect[1] + defect[3]) / 2
     defect_center_y = (defect[2] + defect[4]) / 2
-    distance = pixDis(defect_center_x, defect_center_y, frame.shape[0]/2, frame.shape[1]/2)
+    distance = pixDis(defect_center_x, defect_center_y, frame.shape[1]/2, frame.shape[0]/2)
     mask = frame.copy()
     circles = cv2.HoughCircles(canny,cv2.HOUGH_GRADIENT, edge_config.get("hough_dp"), 5,
                             param1=edge_config.get("canny_threshold1"),param2=edge_config.get("canny_threshold2"),
@@ -93,7 +88,7 @@ def PipeRadiusRestrictor(frame, defect):
     circles = circles.reshape((circles.shape[1], circles.shape[2]))
     circles = sorted(circles, key=lambda circle:abs(circle[2] - distance))
     circles = circles[0:len(circles)-1:100]
-    drawCircle(frame, circles)
+    # drawCircle(frame, circles)
     return ReturnedCircle(mask, circles)
 
 ''' 依据距离图像中心最近的排序方式限制标定管道位置 '''
@@ -105,11 +100,13 @@ def PipeCenterRestrictor(frame):
                             param2=edge_config.get("canny_threshold2"),
                             minRadius=edge_config.get("hough_min_radius"),
                             maxRadius=edge_config.get("hough_max_radius"))
+    if circles is None:
+        return ReturnedCircle(mask, [])
     circles = np.uint16(np.around(circles))
     circles = circles.reshape((circles.shape[1], circles.shape[2]))
     circles = sorted(circles, key=lambda circle:pixDis(circle[0], circle[1], frame.shape[1]/2, frame.shape[0]/2))
     circles = circles[0:len(circles)-1:100]
-    drawCircle(frame, circles)
+    # drawCircle(frame, circles)
     '''
     circles[0] is the calibrated base value.
     return value.(i[0], i[1]) is center, and i[2] is radius.
@@ -137,6 +134,7 @@ def ShowVideos(video_path):
 # ShowVideos("/Users/inger/projects/PycharmProjects/opencv_demo/videos/789-779-line.mp4")
 def ShowImages(images):
     yolo = YOLO()
+    match = 0
     for file in images:
         print('==>Processing: ', file)
         image = cv2.imread(file)
@@ -145,20 +143,32 @@ def ShowImages(images):
         detected = []
         if features != None:
             if len(features) == 1:
+                feat = features[0]
                 mask, pipe = PipeRadiusRestrictor(image, feat)
             else:
                 mask, pipe = PipeCircle(image)
             for feat in features:
                 dft = Defect(feat[0], image[feat[1]:feat[3], feat[2]:feat[4]])
                 detected.append(dft)
-            thinker = Thinker(pipe, detected)
-            thinker.defect_proportion()
+            if not pipe is None:
+                thinker = Thinker(pipe, detected)
+                thinker.defect_proportion()
+                # savepath = 'datasets/level-sewer10/jg/' + osp.basename(file).split('.')[0] + '-' + str(thinker.level) + '.jpg'
+                # print('[SUCCESS][SAVE] ', savepath)
+                # save_image(savepath, image)
+                if thinker.level == int(osp.basename(file).split("-")[1].split(".")[0]):
+                    match += 1
+                    print('match')
+            else:
+                print("[ERROR][APC] Fail to calibrate pipe")
         else:
             ''' Yolo fail to detect defects '''
-            mask, pipe = PipeCircle(image)
-        imgStack = stackImages(0.3, ([mask, result]))
-        cv2.imshow(window_caption, imgStack)
-        cv2.waitKey()
+            print("[ERROR][YOLO] yolo fail to detect")
+            # mask, pipe = PipeCircle(image)
+        # imgStack = stackImages(0.3, ([mask, result]))
+        # cv2.imshow(window_caption, imgStack)
+        # cv2.waitKey()
+    print("准确率: ", np.float(match / len(file)))
     cv2.destroyAllWindows()
 
 def ShowDatasetsPipe(path):
@@ -166,7 +176,8 @@ def ShowDatasetsPipe(path):
     images = []
     for file in os.listdir(path):
         filename = osp.join(path, file)
-        images.append(filename)
+        if isImageFile(filename):
+            images.append(filename)
     print("Imagesets initialized successfully!")
     ShowImages(images)
 

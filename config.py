@@ -4,7 +4,7 @@
 
 conf = {
     "path": "datasets/json",
-    "datasets": "datasets/sewer10/pl"
+    "datasets": "datasets/level-sewer10/chj"
 }
 
 yolo_config = {
@@ -30,5 +30,81 @@ edge_config = {
     "hough_min_dist": 480,
     "hough_min_radius": 32,
     "hough_max_radius": 640,
-    "defect_min_area": 800
+    "defect_min_area": 255,
+    "bin_thresh": 155
+}
+
+dft_rank_tbl = {
+    'chj': {
+        'id': 1,
+        'level': [0, 1, 2, 3, 4],
+        'percent': [0, 0.15, 0.25, 0.5, 1],
+        'rank': [0, 0.1, 2, 5, 10]
+    },
+    'bx': {
+        'id': 2,
+        'level': [0, 1, 2, 3, 4],
+        'percent': [0, 0.05, 0.15, 0.25, 1],
+        'rank': [0, 1, 2, 5, 10]
+    },
+    'zhaw': {
+        'id': 3,
+        'level': [0, 1, 2, 3, 4],
+        'percent': [0, 0.15, 0.25, 0.5, 1],
+        'rank': [0, 0.1, 2, 5, 10]
+    },
+    'qf': {
+        'id': 5,
+        'level': [0, 1, 2, 3, 4],
+        'percent': [0, 0.2, 0.35, 0.5, 1],
+        'rank': [0, 0.5, 2, 5, 10]
+    },
+    'jg': {
+        'id': 7,
+        'level': [0, 1, 2, 3, 4],
+        'percent': [0, 0.15, 0.25, 0.5, 0.8],
+        'rank': [0, 0.5, 2, 5, 10]
+    },
+    'shg': {
+        'id': 8,
+        'level': [0, 1, 2, 3, 4],
+        'percent': [0, 0.15, 0.25, 0.5, 1],
+        'rank': [0, 0.5, 2, 5, 10]
+    },
+    'pl': {
+        'id': 9,
+        'level': [0, 1, 2, 3, 4],
+        'percent': [0, 0.1, 0.25, 0.6, 1],
+        'rank': [0, 0.5, 2, 5, 10]
+    },
+    'zhgaj': {
+        'id': 11,
+        'level': [0, 1, 2, 3],
+        'percent': [0, 0.1, 0.2, 1],
+        'rank': [0, 0.5, 2, 5]
+    },
+    'cqbg': {
+        'id': 12,
+        'level': [0, 1, 2, 3, 4],
+        'percent': [0, 0.15, 0.25, 0.5, 1],
+        'rank': [0, 1, 3, 5, 10]
+    },
+    'ywchr': {
+        'id': 13,
+        'level': [0, 1, 2, 3],
+        'percent': [0, 0.1, 0.3, 1],
+        'rank': [0, 1, 2, 5]
+    },
+    'shl': {
+        'id': 13,
+        'level': [0, 1, 2, 3, 4],
+        'percent': [0, 0.05, 0.15, 0.3, 1],
+        'rank': [0, 0.5, 2, 5, 10]
+    },
+    'fsh': {
+        'id': 14,
+        'level': [0, 1, 2, 3],
+        'percent': [0, 0.1, 0.5, 1],
+        'rank': [0, 0.5, 2, 5]
+    }
 }

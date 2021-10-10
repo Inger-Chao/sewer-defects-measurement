@@ -4,4 +4,6 @@ __pycache__
 *.DS_Store
 dl_model
 datasets/sewer10
+datasets/level-sewer10
 *实验中间结果*
+result_log
