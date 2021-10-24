@@ -4,7 +4,7 @@
 
 conf = {
     "path": "datasets/json",
-    "datasets": "datasets/level-sewer10/chj"
+    "datasets": "datasets/success"
 }
 
 yolo_config = {
@@ -25,7 +25,7 @@ edge_config = {
     "canny_threshold1": 142,
     "canny_threshold2": 146,
     "coefficient": 4,
-    "min_area": 9220,
+    "min_area": 8000,
     "hough_dp": 2,
     "hough_min_dist": 480,
     "hough_min_radius": 32,
@@ -35,10 +35,16 @@ edge_config = {
 }
 
 dft_rank_tbl = {
+    'default': {
+        'id': 1,
+        'level': [0, 1, 2, 3, 4],
+        'percent': [0, 0.2, 0.4, 0.6, 1],
+        'rank': [0, 0.1, 2, 5, 10]
+    },
     'chj': {
         'id': 1,
         'level': [0, 1, 2, 3, 4],
-        'percent': [0, 0.15, 0.25, 0.5, 1],
+        'percent': [0, 0.2, 0.4, 0.6, 1],
         'rank': [0, 0.1, 2, 5, 10]
     },
     'bx': {

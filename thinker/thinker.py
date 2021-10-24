@@ -38,9 +38,9 @@ class Thinker:
             sumaraea = sum(cv2.contourArea(cnt) for cnt in contours)
         except:
             print('find contour area error')
-        for cnt in contours:
-            if cv2.contourArea(cnt) > edge_config['defect_min_area']:
-                cv2.drawContours(mask, cnt, -1, (255, 0, 255), 1)
+        # for cnt in contours:
+        #     if cv2.contourArea(cnt) > edge_config['defect_min_area']:
+        #         cv2.drawContours(mask, cnt, -1, (255, 0, 255), 1)
         # stack_image = stackImages(0.5, [[mask, thresh1]])
         # cv2.imshow("defect feature", stack_image)
         return maxarea, sumaraea
@@ -64,6 +64,6 @@ class Thinker:
                         print('Detected class: ', name, ' Defect prop1: ', prop1, ' level: ', self.level)
                         continue
                 if prop1 > max(dft_rank_tbl[name]['percent']):
-                    self.level = len(dft_rank_tbl[name]['percent']) - 1
+                    self.level = max(dft_rank_tbl[name]['level'])
             except:
                 print('[ERROR][YOLO] Unsupported defect class: ', name)

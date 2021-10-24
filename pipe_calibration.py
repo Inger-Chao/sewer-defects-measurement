@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2021-09-06 14:49
 # @Author  : Inger
+from typing import Set
 import cv2
 import numpy as np
 import os
@@ -8,7 +9,7 @@ import os.path as osp
 from utils.cv_util import save_image, stackImages, pixDis
 from utils.utils import opencvToPIllow, pil2Opencv, isImageFile
 from detector.defects_detector import YOLO
-from config import edge_config, conf
+from config import edge_config, conf, dft_rank_tbl
 from thinker.thinker import Defect, Thinker
 
 
@@ -37,7 +38,15 @@ def drawCircle(frame, hough_circles):
 
 def ReturnedCircle(mask, hough_circle):
     if len(hough_circle) == 0:
-        return mask, None
+        '''default calibrated pipe is about 1/3 of entire picture'''
+        print("[ERROR][APC] Fail to calibrate pipe")
+        center = ((int)(mask.shape[1] * 0.5), int(mask.shape[0] * 0.5))
+        radius = min((int)(mask.shape[0] * 0.3), (int)(mask.shape[1] * 0.3))
+        pipe = np.zeros((radius * 2, radius * 2),dtype=np.uint8)
+        cv2.circle(pipe, (radius, radius), radius, 255, -1)
+        cv2.circle(mask, center, radius, (0,255,0), 2)
+        cv2.circle(mask, center, 2, (0,0,255), 3)
+        return mask, pipe
     calibrated_pipe = hough_circle[0] # 取所有行的第 0 列元素
     center = (calibrated_pipe[0],calibrated_pipe[1])
     radius = calibrated_pipe[2]
@@ -150,35 +159,91 @@ def ShowImages(images):
             for feat in features:
                 dft = Defect(feat[0], image[feat[1]:feat[3], feat[2]:feat[4]])
                 detected.append(dft)
-            if not pipe is None:
                 thinker = Thinker(pipe, detected)
                 thinker.defect_proportion()
-                # savepath = 'datasets/level-sewer10/jg/' + osp.basename(file).split('.')[0] + '-' + str(thinker.level) + '.jpg'
+                # savepath = 'datasets/level-sewer10/bx/' + osp.basename(file).split('.')[0] + '-' + str(thinker.level) + '.jpg'
                 # print('[SUCCESS][SAVE] ', savepath)
                 # save_image(savepath, image)
                 if thinker.level == int(osp.basename(file).split("-")[1].split(".")[0]):
                     match += 1
+                    # save_image('datasets/01-tmp/success/' + osp.basename(file), image)
                     print('match')
-            else:
-                print("[ERROR][APC] Fail to calibrate pipe")
+                    break
         else:
             ''' Yolo fail to detect defects '''
             print("[ERROR][YOLO] yolo fail to detect")
-            # mask, pipe = PipeCircle(image)
+            mask, pipe = PipeCircle(image)
+            result = image.copy()
+            pipeArea = pipe.sum() / 255
+            blured = cv2.GaussianBlur(image, (7, 7), 1)
+            grayed = cv2.cvtColor(blured, cv2.COLOR_BGR2GRAY)
+            imgCanny = cv2.Canny(grayed, edge_config.get("canny_threshold1"), edge_config.get("canny_threshold2"))
+            kernel = np.ones((5, 5))
+            imgDil = cv2.dilate(imgCanny, kernel, iterations=1) 
+            min_area = edge_config.get("min_area")
+            contours, hierarchy = cv2.findContours(imgDil, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+            for cnt in contours:
+                area = cv2.contourArea(cnt)
+                if area > min_area:
+                    cv2.drawContours(result, cnt, -1, (255, 0, 255), 2)
+                    peri = cv2.arcLength(cnt, True)
+                    approx = cv2.approxPolyDP(cnt, 0.02 * peri, True)
+                    # print the quantity of points
+                    # print(len(approx))
+                    x , y , w, h = cv2.boundingRect(approx)
+                    cv2.rectangle(result, (x , y ), (x + w , y + h ), (0, 255, 0), 5)
+
+                    prop = area/pipeArea
+                    level = 0
+                    cv2.putText(result, "Percent: " + str(prop),(x + w + 20, y + 20),
+                                cv2.FONT_HERSHEY_COMPLEX, .7,(0, 255, 0), 2 )
+                    if prop > max(dft_rank_tbl['default']['percent']):
+                        level = max(dft_rank_tbl['default']['level'])
+                        cv2.putText(result, "Level: " + str(level),(x + w + 20, y + 45),
+                                cv2.FONT_HERSHEY_COMPLEX, .7,(0, 255, 0), 2 )
+                        break
+                    for i, percent in enumerate(dft_rank_tbl['default']['percent']):
+                        if (prop < percent):
+                            level = i
+                            cv2.putText(result, "Level: " + str(level),(x + w + 20, y + 45),
+                                    cv2.FONT_HERSHEY_COMPLEX, .7,(0, 255, 0), 2 )
+                            break
+                    # savepath = 'datasets/level-sewer10/bx/' + osp.basename(file).split('.')[0] + '-' + str(level) + '.jpg'
+                    # print('[SUCCESS][SAVE] ', savepath)
+                    # save_image(savepath, image)
+                    if thinker.level == int(osp.basename(file).split("-")[1].split(".")[0]):
+                        match += 1
+                        # save_image('datasets/01-tmp/success/' + osp.basename(file), image)
+                        print('match')
+                        break
+        
+        '''display results'''
         # imgStack = stackImages(0.3, ([mask, result]))
         # cv2.imshow(window_caption, imgStack)
         # cv2.waitKey()
-    print("准确率: ", np.float(match / len(file)))
+    print("准确率: ", match / len(images))
     cv2.destroyAllWindows()
+    return match, match / len(images)
 
 def ShowDatasetsPipe(path):
     print("Ready to Loading datasets: ",osp.abspath(path))
-    images = []
-    for file in os.listdir(path):
-        filename = osp.join(path, file)
-        if isImageFile(filename):
-            images.append(filename)
-    print("Imagesets initialized successfully!")
-    ShowImages(images)
+    images = set()
+    categories = os.listdir(path);
+    if '.DS_Store' in categories:
+        categories.remove('.DS_Store')
+        '''for err-sample dir'''
+        # categories.remove('README.md')
+    for category in categories:
+        images = set()
+        c_path = osp.join(path, category)
+        files = os.listdir(c_path)
+        if '.DS_Store' in files:
+            files.remove('.DS_Store')
+        for file in files:
+            filename = osp.join(c_path, file)
+            images.add(filename)
+        print("========> Imagesets initialized successfully for: ", category)
+        match, acc = ShowImages(images)
+        print("========> Accuracy for category {:s}: {:3F}, match: {:d}, total: {:d} <========".format(category, acc, match, len(images)))
 
 ShowDatasetsPipe(conf.get("datasets"))
