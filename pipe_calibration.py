@@ -247,3 +247,4 @@ def ShowDatasetsPipe(path):
         print("========> Accuracy for category {:s}: {:3F}, match: {:d}, total: {:d} <========".format(category, acc, match, len(images)))
 
 ShowDatasetsPipe(conf.get("datasets"))
+# ShowImages(["datasets/level-sewer10/jg/070032-1.jpg"])
