@@ -24,6 +24,7 @@ edge_config = {
     # canny threshold param
     "canny_threshold1": 142,
     "canny_threshold2": 146,
+    "acc_threshold": 255,
     "coefficient": 4,
     "min_area": 8000,
     "hough_dp": 2,

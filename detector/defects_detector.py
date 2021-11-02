@@ -32,7 +32,7 @@ class YOLO(object):
         with open(classes_path) as f:
             class_names = f.readlines()
         class_names = [c.strip() for c in class_names]
-        print(class_names)
+        # print(class_names)
         return class_names
 
     def _get_anchors(self):
@@ -60,7 +60,7 @@ class YOLO(object):
         for i in range(3):
             self.yolo_decodes.append(DecodeBox(self.anchors[i], len(self.class_names),  (self.model_image_size[1], self.model_image_size[0])))
 
-        print('{} model, anchors, and classes loaded.'.format(self.model_path))
+        # print('{} model, anchors, and classes loaded.'.format(self.model_path))
         # 画框设置不同的颜色
         hsv_tuples = [(x / len(self.class_names), 1., 1.)
                       for x in range(len(self.class_names))]
@@ -136,11 +136,11 @@ class YOLO(object):
 
                 # 画框框
                 label = '{} {:.2f}'.format(predicted_class, score)
-                print(label, ': ',score)
+                # print(label, ': ',score)
                 draw = ImageDraw.Draw(image)
                 label_size = draw.textsize(label, font)
                 label = label.encode('utf-8')
-                print(label, top, left, bottom, right)
+                # print(label, top, left, bottom, right)
                 
                 if top - label_size[1] >= 0:
                     text_origin = np.array([left, top - label_size[1]])

@@ -42,6 +42,7 @@ def getContours(img, w, pipe,imgContour):
     contours, hierarchy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     pipeCnt, _ = cv2.findContours(pipe, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     pipeArea = (w/10.0) * cv2.contourArea(pipeCnt[0])
+    min_area = cv2.getTrackbarPos("Area","Parameters")
     for cnt in contours:
         area = cv2.contourArea(cnt)
         if area > min_area:
@@ -51,14 +52,14 @@ def getContours(img, w, pipe,imgContour):
             # print the quantity of points
             # print(len(approx))
             x , y , w, h = cv2.boundingRect(approx)
-            cv2.rectangle(imgContour, (x , y ), (x + w , y + h ), (0, 255, 0), 5)
+            # cv2.rectangle(imgContour, (x , y ), (x + w , y + h ), (0, 255, 0), 5)
 
             # cv2.putText(imgContour, "Points: " + str(len(approx)), (x + w + 20, y + 20), cv2.FONT_HERSHEY_COMPLEX, .7,
             #             (0, 255, 0), 2)
-            cv2.putText(imgContour, "Area: " + str(int(area)), (x + w + 20, y + 45), cv2.FONT_HERSHEY_COMPLEX, 0.7,
-                        (0, 255, 0), 2)
-            cv2.putText(imgContour, "Level: " + str(area/pipeArea),(x + w + 20, y + 20),
-                        cv2.FONT_HERSHEY_COMPLEX, .7,(0, 255, 0), 2 )
+            # cv2.putText(imgContour, "Area: " + str(int(area)), (x + w + 20, y + 45), cv2.FONT_HERSHEY_COMPLEX, 0.7,
+            #             (0, 255, 0), 3)
+            # cv2.putText(imgContour, "Level: " + str(area/pipeArea),(x + w + 20, y + 20),
+            #             cv2.FONT_HERSHEY_COMPLEX, .7,(0, 255, 0), 3 )
             print("Level: " + str(area/pipeArea))
 
 def main():
@@ -70,8 +71,8 @@ def main():
         grayedPipe = cv2.cvtColor(pipe, cv2.COLOR_BGR2GRAY)
         imgYolo, defects_feature = yolo.detect_image(opencvToPIllow(img))
         imgYolo = pil2Opencv(imgYolo)
-        imgCopy = img.copy()
         while True:
+            imgCopy = img.copy()
             canny_threshold1 = cv2.getTrackbarPos("Threshold1","Parameters")
             canny_threshold2 = cv2.getTrackbarPos("Threshold2","Parameters")
             imgCanny = cv2.Canny(grayed, canny_threshold1, canny_threshold2)
@@ -80,21 +81,23 @@ def main():
 
             coefficient = cv2.getTrackbarPos("Coefficient", "Parameters")
             if defects_feature != None :
+                count = 1
                 for defect in defects_feature:
                     defect_area = img[defect[1]:defect[3], defect[2]:defect[4]]
                     defect_copy = defect_area.copy()
-                    cv2.imshow("defect area", defect_area)
-                    defect_canny = cv2.Canny(defect_area, canny_threshold1, canny_threshold2)
-                    
-                    defect_dil = cv2.dilate(defect_canny, kernel, iterations=1)
+                    defect_gray = grayed[defect[1]:defect[3], defect[2]:defect[4]]
+                    # defect_dil = imgDil[defect[1]:defect[3], defect[2]:defect[4]]
+                    _, defect_dil = cv2.threshold(src=defect_gray,thresh=64,maxval=255, type=cv2.THRESH_OTSU)
+                    cv2.imshow("defect area" + str(count), defect_dil)
                     getContours(defect_dil, coefficient, grayedPipe, defect_copy)
                     imgCopy[defect[1]:defect[3], defect[2]:defect[4]] = defect_copy
+                    count += 1
             else:
                 getContours(imgDil, coefficient, grayedPipe, imgCopy)
             imgStack = stackImages(0.4, ([imgYolo, imgCanny],
-                                            [imgDil, imgCopy]))
+                                                [imgDil, imgCopy]))
             cv2.imshow("Parameters", imgStack)
-            if cv2.waitKey(10) & 0xFF == ord("q"):
+            if cv2.waitKey(1000) & 0xFF == ord("q"):
                 break
     cv2.destroyAllWindows()
 
