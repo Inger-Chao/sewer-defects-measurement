@@ -403,3 +403,7 @@ def isVideoFile(filename):
       if (item in filename):
          return True
    return False
+
+def removeDStore(filelist):
+    if '.DS_Store' in filelist:
+        filelist.remove('.DS_Store')

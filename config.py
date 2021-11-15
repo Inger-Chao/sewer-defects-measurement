@@ -3,7 +3,7 @@
 # @Author  : Inger
 
 conf = {
-    "path": "datasets/json",
+    "path": "datasets/songbai/label-only-pipe/pipe",
     "datasets": "datasets/success"
 }
 
@@ -24,9 +24,9 @@ edge_config = {
     # canny threshold param
     "canny_threshold1": 142,
     "canny_threshold2": 146,
-    "acc_threshold": 255,
+    "acc_threshold": 32,
     "coefficient": 4,
-    "min_area": 8000,
+    "min_area": 5000,
     "hough_dp": 2,
     "hough_min_dist": 480,
     "hough_min_radius": 32,
@@ -37,9 +37,9 @@ edge_config = {
 
 dft_rank_tbl = {
     'default': {
-        'id': 1,
+        'id': 0,
         'level': [0, 1, 2, 3, 4],
-        'percent': [0, 0.2, 0.4, 0.6, 1],
+        'percent': [0, 0.15, 0.35, 0.6, 1],
         'rank': [0, 0.1, 2, 5, 10]
     },
     'chj': {

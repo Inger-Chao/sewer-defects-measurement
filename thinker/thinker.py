@@ -29,7 +29,7 @@ class Thinker:
         grayed = cv2.cvtColor(blured, cv2.COLOR_BGR2GRAY)
         # kernel = np.ones((1, 1))
         # dil = cv2.dilate(canny, kernel, iterations=1)
-        _,thresh1 = cv2.threshold(src=grayed,thresh=edge_config['bin_thresh'],maxval=255, type=cv2.THRESH_BINARY)
+        _,thresh1 = cv2.threshold(src=grayed, thresh=edge_config['bin_thresh'],maxval=255, type=cv2.THRESH_OTSU)
         contours, hierarchy = cv2.findContours(thresh1, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
         maxarea = 0
         sumaraea = 0
@@ -110,4 +110,46 @@ class EntireProcesser:
                                 cv2.FONT_HERSHEY_COMPLEX, .7,(0, 255, 0), 2 )
                         break
         return result
+
+    
+    def process_level(self, true_level=0):
+        pipe_base = self.pipe.sum() / 255
+        self.level = 0
+        result = self.image.copy()
+        blured = cv2.GaussianBlur(self.image, (7, 7), 1)
+        grayed = cv2.cvtColor(blured, cv2.COLOR_BGR2GRAY)
+        imgCanny = cv2.Canny(grayed, edge_config.get("canny_threshold1"), edge_config.get("canny_threshold2"))
+        kernel = np.ones((5, 5))
+        imgDil = cv2.dilate(imgCanny, kernel, iterations=1) 
+        min_area = edge_config.get("min_area")
+        contours, hierarchy = cv2.findContours(imgDil, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        for cnt in contours:
+            area = cv2.contourArea(cnt)
+            if area > min_area:
+                cv2.drawContours(result, cnt, -1, (255, 0, 255), 2)
+                peri = cv2.arcLength(cnt, True)
+                approx = cv2.approxPolyDP(cnt, 0.02 * peri, True)
+                # print the quantity of points
+                # print(len(approx))
+                x , y , w, h = cv2.boundingRect(approx)
+                cv2.rectangle(result, (x , y ), (x + w , y + h ), (0, 255, 0), 5)
+
+                prop = area/pipe_base
+                cv2.putText(result, "Percent: " + str(prop),(x + w + 20, y + 20),
+                            cv2.FONT_HERSHEY_COMPLEX, .7,(0, 255, 0), 2 )
+                if prop > max(dft_rank_tbl['default']['percent']):
+                    self.level = max(dft_rank_tbl['default']['level'])
+                    if self.level == true_level:
+                        return
+                    cv2.putText(result, "Level: " + str(self.level),(x + w + 20, y + 45),
+                            cv2.FONT_HERSHEY_COMPLEX, .7,(0, 255, 0), 2 )
+                    break
+                for i, percent in enumerate(dft_rank_tbl['default']['percent']):
+                    if (prop < percent):
+                        self.level = i
+                        if self.level == true_level:
+                            return
+                        cv2.putText(result, "Level: " + str(self.level),(x + w + 20, y + 45),
+                                cv2.FONT_HERSHEY_COMPLEX, .7,(0, 255, 0), 2 )
+                        break
     

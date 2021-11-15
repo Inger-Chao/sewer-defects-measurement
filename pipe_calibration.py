@@ -7,14 +7,16 @@ import numpy as np
 import os
 import os.path as osp
 import random
+from data_loader import videos_path
 from utils.cv_util import save_image, stackImages, pixDis
-from utils.utils import opencvToPIllow, pil2Opencv, isImageFile
+from utils.utils import opencvToPIllow, pil2Opencv, isImageFile, removeDStore
 from detector.defects_detector import YOLO
 from config import edge_config, conf, dft_rank_tbl
 from thinker.thinker import Defect, EntireProcesser, Thinker
 
 
 font = cv2.FONT_HERSHEY_COMPLEX
+yolo = YOLO()
 
 global center
 window_caption = 'Pipe Calibrator'
@@ -40,7 +42,6 @@ def drawCircle(frame, hough_circles):
 def ReturnedCircle(mask, hough_circle):
     if len(hough_circle) == 0:
         '''default calibrated pipe is about 1/3 of entire picture'''
-        print("[ERROR][APC] Fail to calibrate pipe")
         center = ((int)(mask.shape[1] * 0.5), int(mask.shape[0] * 0.5))
         radius = min((int)(mask.shape[0] * 0.3), (int)(mask.shape[1] * 0.3))
         pipe = np.zeros((radius * 2, radius * 2),dtype=np.uint8)
@@ -105,7 +106,8 @@ def PipeRadiusRestrictor(frame, defect):
 def PipeCenterRestrictor(frame):
     mask = frame.copy()
     canny = Preprocess(frame)
-    circles = cv2.HoughCircles(canny,cv2.HOUGH_GRADIENT, edge_config.get("hough_dp"), (int)(frame.shape[0]/random.uniform(10, 20)),
+    circles = cv2.HoughCircles(canny,cv2.HOUGH_GRADIENT, edge_config.get("hough_dp"), 
+                            (int)(frame.shape[0]/random.uniform(5, 20)),
                             param1=edge_config.get("canny_threshold1"),
                             param2=edge_config.get("acc_threshold"),
                             minRadius=edge_config.get("hough_min_radius"),
@@ -125,28 +127,55 @@ def PipeCenterRestrictor(frame):
     return ReturnedCircle(mask, circles)
 
 def ShowVideos(video_path):
+    print("[INFO][PROCESSING]==>", video_path)
     cap = cv2.VideoCapture(video_path)
-
+    
+    #读取视频的fps,  大小
+    fps=cap.get(cv2.CAP_PROP_FPS)
+    size=(cap.get(cv2.CAP_PROP_FRAME_WIDTH),cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    print("fps: {}\nsize: {}".format(fps,size))
+    
+    #读取视频时长（帧总数）
+    total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    print("[INFO] {} total frames in video".format(total))
     while True:
         ret, frame = cap.read()
-        frame = frame[100:frame.shape[0]-50, 50:frame.shape[1]]
+        detected = []
+        try:
+            frame = frame[100:frame.shape[0]-50, 50:frame.shape[1]]
+        except:
+            break
         mask, pipe = PipeCircle(frame)
+        # result, features = yolo.detect_image(opencvToPIllow(frame))
+        # result = pil2Opencv(result)
+        # if features is None:
         thinker = EntireProcesser(pipe, frame)
         result = thinker.entire_image()
+        # else:
+        #     for feat in features:
+        #         dft = Defect(feat[0], frame[feat[1]:feat[3], feat[2]:feat[4]])
+        #         detected.append(dft)
+        #         thinker = Thinker(pipe, detected)
+        #         thinker.defect_proportion()
+        #     result = frame
 
-        imgStack = stackImages(0.3, ([mask, result]))
+        imgStack = stackImages(0.5, ([mask, result]))
         cv2.imshow(window_caption, imgStack)
 
-        key = cv2.waitKey(1)
-        if key == 27:
+        #--------键盘控制视频---------------
+        #读取键盘值
+        key = cv2.waitKey(1) & 0xff
+        #设置空格按下时暂停
+        if key == ord(" "):
+            cv2.waitKey(0)
+        #设置Q按下时退出
+        if key == ord("q"):
             break
 
     cap.release()
     cv2.destroyAllWindows()
 
-# ShowVideos("/Users/inger/projects/PycharmProjects/opencv_demo/videos/video13.mp4")
 def ShowImages(images):
-    yolo = YOLO()
     match = 0
     for file in images:
         # print('==>Processing: ', file)
@@ -178,45 +207,47 @@ def ShowImages(images):
             print("[ERROR][YOLO] yolo fail to detect")
             mask, pipe = PipeCircle(image)
             result = image.copy()
+            true_level = int(osp.basename(file).split("-")[1].split(".")[0])
             thinker = EntireProcesser(pipe, image)
-            thinker.entire_image()
+            thinker.process_level(true_level)
             # savepath = 'datasets/level-sewer10/bx/' + osp.basename(file).split('.')[0] + '-' + str(level) + '.jpg'
             # print('[SUCCESS][SAVE] ', savepath)
             # save_image(savepath, image)
-            if thinker.level == int(osp.basename(file).split("-")[1].split(".")[0]):
+            if thinker.level == true_level:
                 match += 1
                 # save_image('datasets/01-tmp/success/' + osp.basename(file), image)
                 # print('match')
                 break
         
         '''display results'''
-        imgStack = stackImages(0.3, ([mask, result]))
-        cv2.imshow(window_caption, imgStack)
-        cv2.waitKey()
-    print("准确率: ", match / len(images))
+        # imgStack = stackImages(0.3, ([mask, result]))
+        # cv2.imshow(window_caption, imgStack)
+        # cv2.waitKey()
     cv2.destroyAllWindows()
-    return match, match / len(images)
+    if (len(images)==0):
+        return match, 0
+    return match, round(match / len(images), 3)
 
 def ShowDatasets(path):
     print("Ready to Loading datasets: ",osp.abspath(path))
-    images = set()
+    res_tables = np.zeros((5, 15))
+    acc_tables = np.zeros((5, 15))
     categories = os.listdir(path);
-    if '.DS_Store' in categories:
-        categories.remove('.DS_Store')
-        '''for err-sample dir'''
-        # categories.remove('README.md')
-    for category in categories:
-        images = set()
-        c_path = osp.join(path, category)
-        files = os.listdir(c_path)
-        if '.DS_Store' in files:
-            files.remove('.DS_Store')
-        for file in files:
-            filename = osp.join(c_path, file)
-            images.add(filename)
-        print("========> Imagesets initialized successfully for: ", category)
-        match, acc = ShowImages(images)
-        print("========> Accuracy for category {:s}: {:3F}, match: {:d}, total: {:d} <========".format(category, acc, match, len(images)))
-
-ShowDatasets(conf.get("datasets"))
-# ShowImages(["datasets/level-sewer10/jg/070032-1.jpg"])
+    removeDStore(categories)
+    for type in categories:
+        c_type_dir = osp.join(path, type)
+        c_level_dirs = os.listdir(c_type_dir)
+        removeDStore(c_level_dirs)
+        for level in c_level_dirs:
+            images = list()
+            files_path = osp.join(c_type_dir, level)
+            filenames = os.listdir(files_path)
+            removeDStore(filenames)
+            for image in filenames:
+                images.append(osp.join(files_path, image))
+            # print("========> Imagesets initialized successfully for: ", type)
+            match, acc = ShowImages(images)
+            res_tables[int(level)][dft_rank_tbl[type]['id']] = match
+            acc_tables[int(level)][dft_rank_tbl[type]['id']] = acc
+            # print("========> Accuracy for category {:s}: {:3F} with level {:s}, match: {:d}, total: {:d} <========".format(type, acc, level ,match, len(images)))
+    return res_tables, acc_tables

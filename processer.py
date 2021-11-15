@@ -2,13 +2,16 @@
 # @Time    : 2020-11-13 19:09
 # @Author  : Inger
 
+import os
+from pydoc import pipepager
 import cv2
 import numpy as np
-from data_loader import DataLoader
+from data_loader import DataLoader, load_songbai_data
+from pipe_calibration import PipeCenterRestrictor, PipeCircle
 from utils.cv_util import stackImages
 from utils.utils import opencvToPIllow, pil2Opencv
 from detector.defects_detector import YOLO
-from config import edge_config
+from config import edge_config, dft_rank_tbl
 
 def empty(a):
     pass
@@ -40,9 +43,12 @@ def defectsLevel(defectArea, pipeArea):
 
 def getContours(img, w, pipe,imgContour):
     contours, hierarchy = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-    pipeCnt, _ = cv2.findContours(pipe, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-    pipeArea = (w/10.0) * cv2.contourArea(pipeCnt[0])
+    # pipeCnt, _ = cv2.findContours(pipe, cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    # pipeArea = (w/10.0) * cv2.contourArea(pipeCnt[0])
+    pipeArea = pipe.sum()/128
     min_area = cv2.getTrackbarPos("Area","Parameters")
+    total_level = 0
+    level = 0
     for cnt in contours:
         area = cv2.contourArea(cnt)
         if area > min_area:
@@ -52,23 +58,40 @@ def getContours(img, w, pipe,imgContour):
             # print the quantity of points
             # print(len(approx))
             x , y , w, h = cv2.boundingRect(approx)
-            # cv2.rectangle(imgContour, (x , y ), (x + w , y + h ), (0, 255, 0), 5)
+            # cv2.rectangle(imgContour, (x , y ), (x + w , y + h ), (0, 255, 0), 2)
 
-            # cv2.putText(imgContour, "Points: " + str(len(approx)), (x + w + 20, y + 20), cv2.FONT_HERSHEY_COMPLEX, .7,
-            #             (0, 255, 0), 2)
-            # cv2.putText(imgContour, "Area: " + str(int(area)), (x + w + 20, y + 45), cv2.FONT_HERSHEY_COMPLEX, 0.7,
-            #             (0, 255, 0), 3)
-            # cv2.putText(imgContour, "Level: " + str(area/pipeArea),(x + w + 20, y + 20),
-            #             cv2.FONT_HERSHEY_COMPLEX, .7,(0, 255, 0), 3 )
-            print("Level: " + str(area/pipeArea))
+            prop = area/pipeArea
+            if prop > max(dft_rank_tbl['default']['percent']):
+                level = max(dft_rank_tbl['default']['level'])
+                total_level = max(level, total_level)
+                cv2.putText(imgContour, "Level: " + str(level),(x + 15, y + 20),
+                        cv2.FONT_HERSHEY_COMPLEX, .7,(0, 0, 255), 2 )
+                break
+            for i, percent in enumerate(dft_rank_tbl['default']['percent']):
+                if (prop < percent):
+                    level = i
+                    total_level = max(level, total_level)
+                    cv2.putText(imgContour, "Level: " + str(level),(x + 15, y+20),
+                            cv2.FONT_HERSHEY_COMPLEX, .7,(0, 0, 255), 2 )
+                    prop = round(prop, 3)
+                    cv2.putText(imgContour, "Prop: " + str(prop),(x + 15, y+45),
+                            cv2.FONT_HERSHEY_COMPLEX, .7,(0, 0, 255), 2 )
+                    print("[INFO][PROP] =  " + str(prop) + "  [LEVEL] = " + str(level))
+                    break
+    return total_level
 
+log_file = open("result_log/1104-songbai-parameters.txt", 'a')
 def main():
     imgs, pipes = DataLoader()
-    for id, img in enumerate(imgs):
+    # imgs = load_songbai_data()
+    for id, file in enumerate(imgs):
+        print("[INFO][PROCESSING]=====>", file)
         pipe = pipes.__getitem__(id)
+        # level = os.path.basename(file).split('-')[1].split('.')[0]
+        img = cv2.imread(file)
+        # mask, pipe = PipeCircle(pipe)
         blured = cv2.GaussianBlur(img, (7, 7), 1)
         grayed = cv2.cvtColor(blured, cv2.COLOR_BGR2GRAY)
-        grayedPipe = cv2.cvtColor(pipe, cv2.COLOR_BGR2GRAY)
         imgYolo, defects_feature = yolo.detect_image(opencvToPIllow(img))
         imgYolo = pil2Opencv(imgYolo)
         while True:
@@ -88,17 +111,26 @@ def main():
                     defect_gray = grayed[defect[1]:defect[3], defect[2]:defect[4]]
                     # defect_dil = imgDil[defect[1]:defect[3], defect[2]:defect[4]]
                     _, defect_dil = cv2.threshold(src=defect_gray,thresh=64,maxval=255, type=cv2.THRESH_OTSU)
-                    cv2.imshow("defect area" + str(count), defect_dil)
-                    getContours(defect_dil, coefficient, grayedPipe, defect_copy)
+                    # cv2.imshow("defect area" + str(count), defect_dil)
+                    cmp_level = getContours(defect_dil, coefficient, pipe, defect_copy)
                     imgCopy[defect[1]:defect[3], defect[2]:defect[4]] = defect_copy
                     count += 1
             else:
-                getContours(imgDil, coefficient, grayedPipe, imgCopy)
+                cmp_level = getContours(imgDil, coefficient, pipe, imgCopy)
+
             imgStack = stackImages(0.4, ([imgYolo, imgCanny],
-                                                [imgDil, imgCopy]))
+                                                [pipe, imgCopy]))
             cv2.imshow("Parameters", imgStack)
-            if cv2.waitKey(1000) & 0xFF == ord("q"):
+            if cv2.waitKey() & 0xFF == ord("q"):
                 break
+            if cv2.waitKey() & 0xFF == ord("w"):
+                min_area = cv2.getTrackbarPos("Area","Parameters")
+                txt = file + ' ' + str(canny_threshold1)+ ' '+str(canny_threshold2)+ ' '+str(min_area)+'\n'
+                log_file.write(txt)
+                break
+            # recomputing
+            if cv2.waitKey() & 0xFF == ord("r"):
+                continue
     cv2.destroyAllWindows()
 
 main()
