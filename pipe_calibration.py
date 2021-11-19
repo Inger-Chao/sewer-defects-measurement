@@ -249,5 +249,29 @@ def ShowDatasets(path):
             match, acc = ShowImages(images)
             res_tables[int(level)][dft_rank_tbl[type]['id']] = match
             acc_tables[int(level)][dft_rank_tbl[type]['id']] = acc
-            # print("========> Accuracy for category {:s}: {:3F} with level {:s}, match: {:d}, total: {:d} <========".format(type, acc, level ,match, len(images)))
+            print("========> Accuracy for category {:s}: {:3F} with level {:s}, match: {:d}, total: {:d} <========".format(type, acc, level ,match, len(images)))
+    return res_tables, acc_tables
+
+def getAllLevelAP(path):
+    print("Ready to Loading datasets: ",osp.abspath(path))
+    res_tables = np.zeros((5, 15))
+    acc_tables = np.zeros((5, 15))
+    categories = os.listdir(path);
+    removeDStore(categories)
+    for type in categories:
+        c_type_dir = osp.join(path, type)
+        c_level_dirs = os.listdir(c_type_dir)
+        removeDStore(c_level_dirs)
+        images = list()
+        for level in c_level_dirs:
+            files_path = osp.join(c_type_dir, level)
+            filenames = os.listdir(files_path)
+            removeDStore(filenames)
+            for image in filenames:
+                images.append(osp.join(files_path, image))
+            # print("========> Imagesets initialized successfully for: ", type)
+        match, acc = ShowImages(images)
+        res_tables[int(level)][dft_rank_tbl[type]['id']] = match
+        acc_tables[int(level)][dft_rank_tbl[type]['id']] = acc
+        print("========> Accuracy for category {:s}: {:3F} with all level, match: {:d}, total: {:d} <========".format(type, acc,match, len(images)))
     return res_tables, acc_tables

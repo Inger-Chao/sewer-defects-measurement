@@ -26,7 +26,7 @@ edge_config = {
     "canny_threshold2": 146,
     "acc_threshold": 32,
     "coefficient": 4,
-    "min_area": 5000,
+    "min_area": 3000,
     "hough_dp": 2,
     "hough_min_dist": 480,
     "hough_min_radius": 32,

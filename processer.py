@@ -80,7 +80,6 @@ def getContours(img, w, pipe,imgContour):
                     break
     return total_level
 
-log_file = open("result_log/1104-songbai-parameters.txt", 'a')
 def main():
     imgs, pipes = DataLoader()
     # imgs = load_songbai_data()
@@ -117,16 +116,16 @@ def main():
                     count += 1
             else:
                 cmp_level = getContours(imgDil, coefficient, pipe, imgCopy)
-
             imgStack = stackImages(0.4, ([imgYolo, imgCanny],
                                                 [pipe, imgCopy]))
             cv2.imshow("Parameters", imgStack)
             if cv2.waitKey() & 0xFF == ord("q"):
                 break
             if cv2.waitKey() & 0xFF == ord("w"):
-                min_area = cv2.getTrackbarPos("Area","Parameters")
-                txt = file + ' ' + str(canny_threshold1)+ ' '+str(canny_threshold2)+ ' '+str(min_area)+'\n'
-                log_file.write(txt)
+                with open("result_log/1104-songbai-parameters.txt", 'a') as log_file:
+                    min_area = cv2.getTrackbarPos("Area","Parameters")
+                    txt = '{%s}\t{%d}\t{%d}\t{%d}\n' % (file, canny_threshold1, canny_threshold2, min_area)
+                    log_file.write(txt)
                 break
             # recomputing
             if cv2.waitKey() & 0xFF == ord("r"):

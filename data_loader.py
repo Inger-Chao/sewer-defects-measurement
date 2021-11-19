@@ -8,7 +8,7 @@ import numpy as np
 from random import sample
 import cv2
 from config import conf, dft_rank_tbl
-from utils.utils import isImageFile
+from utils.utils import isImageFile, removeDStore
 
 '''json'''
 def DataLoader():
@@ -17,6 +17,7 @@ def DataLoader():
     pipes = []
     levels = []
     ids = os.listdir(path)
+    removeDStore(ids)
     ids.sort(key= lambda x:int(x))
     for label in ids:
         itemdir = osp.join(path, label)
@@ -54,7 +55,7 @@ def load_songbai_data():
 
 def videos_path():
     ret = []
-    path = "/Users/inger/projects/PycharmProjects/opencv_demo/videos-10fps/"
+    path = "/Users/inger/projects/PycharmProjects/opencv_demo/videos/videos-10fps/"
     videos = os.listdir(path)
     for filename in videos:
         video = os.path.join(path, filename)
