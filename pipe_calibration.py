@@ -7,9 +7,8 @@ import numpy as np
 import os
 import os.path as osp
 import random
-from data_loader import videos_path
-from utils.cv_util import save_image, stackImages, pixDis
-from utils.utils import opencvToPIllow, pil2Opencv, isImageFile, removeDStore
+from utils.cv_util import pixDis
+from utils.utils import opencvToPIllow, pil2Opencv, removeDStore
 from detector.defects_detector import YOLO
 from config import edge_config, conf, dft_rank_tbl
 from thinker.thinker import Defect, EntireProcesser, Thinker
@@ -142,30 +141,6 @@ def ShowImages(images):
     if (len(images)==0):
         return match, 0
     return match, round(match / len(images), 3)
-
-def ShowDatasets(path):
-    print("Ready to Loading datasets: ",osp.abspath(path))
-    res_tables = np.zeros((5, 15))
-    acc_tables = np.zeros((5, 15))
-    categories = os.listdir(path);
-    removeDStore(categories)
-    for type in categories:
-        c_type_dir = osp.join(path, type)
-        c_level_dirs = os.listdir(c_type_dir)
-        removeDStore(c_level_dirs)
-        for level in c_level_dirs:
-            images = list()
-            files_path = osp.join(c_type_dir, level)
-            filenames = os.listdir(files_path)
-            removeDStore(filenames)
-            for image in filenames:
-                images.append(osp.join(files_path, image))
-            # print("========> Imagesets initialized successfully for: ", type)
-            match, acc = ShowImages(images)
-            res_tables[int(level)][dft_rank_tbl[type]['id']] = match
-            acc_tables[int(level)][dft_rank_tbl[type]['id']] = acc
-            print("========> Accuracy for category {:s}: {:3F} with level {:s}, match: {:d}, total: {:d} <========".format(type, acc, level ,match, len(images)))
-    return res_tables, acc_tables
 
 def getAllLevelAP(path):
     print("Ready to Loading datasets: ",osp.abspath(path))

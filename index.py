@@ -1,7 +1,7 @@
 
-from pipe_calibration import ShowDatasets
+from pipe_calibration import getAllLevelAP
 from config import conf
 
-match, acc = ShowDatasets(conf.get("datasets"))
-# print(match)
-# print(acc)
+match, acc = getAllLevelAP(conf.get("datasets"))
+print(match)
+print(acc)
