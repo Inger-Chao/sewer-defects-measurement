@@ -1,5 +1,4 @@
 import cv2
-import math
 import numpy as np
 from numpy.core.defchararray import index
 from utils.cv_util import empty, stackImages
@@ -38,11 +37,6 @@ class Thinker:
             sumaraea = sum(cv2.contourArea(cnt) for cnt in contours)
         except:
             print('find contour area error')
-        # for cnt in contours:
-        #     if cv2.contourArea(cnt) > edge_config['defect_min_area']:
-        #         cv2.drawContours(mask, cnt, -1, (255, 0, 255), 1)
-        # stack_image = stackImages(0.5, [[mask, thresh1]])
-        # cv2.imshow("defect feature", stack_image)
         return maxarea, sumaraea
     
     def defect_proportion(self):
@@ -90,8 +84,6 @@ class EntireProcesser:
                 cv2.drawContours(result, cnt, -1, (255, 0, 255), 2)
                 peri = cv2.arcLength(cnt, True)
                 approx = cv2.approxPolyDP(cnt, 0.02 * peri, True)
-                # print the quantity of points
-                # print(len(approx))
                 x , y , w, h = cv2.boundingRect(approx)
                 cv2.rectangle(result, (x , y ), (x + w , y + h ), (0, 255, 0), 5)
 
@@ -129,8 +121,6 @@ class EntireProcesser:
                 cv2.drawContours(result, cnt, -1, (255, 0, 255), 2)
                 peri = cv2.arcLength(cnt, True)
                 approx = cv2.approxPolyDP(cnt, 0.02 * peri, True)
-                # print the quantity of points
-                # print(len(approx))
                 x , y , w, h = cv2.boundingRect(approx)
                 cv2.rectangle(result, (x , y ), (x + w , y + h ), (0, 255, 0), 5)
 
