@@ -221,9 +221,9 @@ def ShowImages(images):
                 # break
 
         '''display results'''
-        imgStack = stackImages(0.3, ([mask, result]))
-        cv2.imshow(window_caption, imgStack)
-        cv2.waitKey()
+        # imgStack = stackImages(0.3, ([mask, result]))
+        # cv2.imshow(window_caption, imgStack)
+        # cv2.waitKey()
     cv2.destroyAllWindows()
     if (len(images)==0):
         return match, 0
