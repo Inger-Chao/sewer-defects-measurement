@@ -8,6 +8,7 @@ import os
 import os.path as osp
 import random
 from data_loader import videos_path
+from nets.hed import HedLayer
 from utils.cv_util import save_image, stackImages, pixDis
 from utils.utils import opencvToPIllow, pil2Opencv, isImageFile, removeDStore
 from detector.defects_detector import YOLO
@@ -206,10 +207,10 @@ def ShowImages(images):
             ''' Yolo fail to detect defects '''
             print("[ERROR][YOLO] yolo fail to detect")
             mask, pipe = PipeCircle(image)
-            result = image.copy()
             true_level = int(osp.basename(file).split("-")[1].split(".")[0])
             thinker = EntireProcesser(pipe, image)
             thinker.process_level(true_level)
+            result = thinker.entire_image()
             # savepath = 'datasets/level-sewer10/bx/' + osp.basename(file).split('.')[0] + '-' + str(level) + '.jpg'
             # print('[SUCCESS][SAVE] ', savepath)
             # save_image(savepath, image)
@@ -217,12 +218,12 @@ def ShowImages(images):
                 match += 1
                 # save_image('datasets/01-tmp/success/' + osp.basename(file), image)
                 # print('match')
-                break
-        
+                # break
+
         '''display results'''
-        # imgStack = stackImages(0.3, ([mask, result]))
-        # cv2.imshow(window_caption, imgStack)
-        # cv2.waitKey()
+        imgStack = stackImages(0.3, ([mask, result]))
+        cv2.imshow(window_caption, imgStack)
+        cv2.waitKey()
     cv2.destroyAllWindows()
     if (len(images)==0):
         return match, 0

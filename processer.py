@@ -11,6 +11,7 @@ from pipe_calibration import PipeCenterRestrictor, PipeCircle
 from utils.cv_util import stackImages
 from utils.utils import opencvToPIllow, pil2Opencv
 from detector.defects_detector import YOLO
+from nets.hed import HedLayer
 from config import edge_config, dft_rank_tbl
 
 def empty(a):
@@ -80,6 +81,8 @@ def getContours(img, w, pipe,imgContour):
                     break
     return total_level
 
+hed = HedLayer()
+
 def main():
     imgs, pipes = DataLoader()
     # imgs = load_songbai_data()
@@ -97,9 +100,6 @@ def main():
             imgCopy = img.copy()
             canny_threshold1 = cv2.getTrackbarPos("Threshold1","Parameters")
             canny_threshold2 = cv2.getTrackbarPos("Threshold2","Parameters")
-            imgCanny = cv2.Canny(grayed, canny_threshold1, canny_threshold2)
-            kernel = np.ones((5, 5))
-            imgDil = cv2.dilate(imgCanny, kernel, iterations=1) 
 
             coefficient = cv2.getTrackbarPos("Coefficient", "Parameters")
             if defects_feature != None :
@@ -114,10 +114,16 @@ def main():
                     cmp_level = getContours(defect_dil, coefficient, pipe, defect_copy)
                     imgCopy[defect[1]:defect[3], defect[2]:defect[4]] = defect_copy
                     count += 1
+                    imgStack = stackImages(0.4, ([img, imgYolo],
+                                                    [pipe, imgCopy]))
             else:
+                imgHED = hed.forward(img)
+                imgCanny = cv2.Canny(cv2.cvtColor(imgHED, cv2.COLOR_BGR2GRAY), canny_threshold1, canny_threshold2)
+                kernel = np.ones((5, 5))
+                imgDil = cv2.dilate(imgCanny, kernel, iterations=1) 
                 cmp_level = getContours(imgDil, coefficient, pipe, imgCopy)
-            imgStack = stackImages(0.4, ([imgYolo, imgCanny],
-                                                [pipe, imgCopy]))
+                imgStack = stackImages(0.4, ([imgYolo, imgCanny],
+                                                    [pipe, imgCopy]))
             cv2.imshow("Parameters", imgStack)
             if cv2.waitKey() & 0xFF == ord("q"):
                 break

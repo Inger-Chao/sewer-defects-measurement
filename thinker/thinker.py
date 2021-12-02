@@ -2,6 +2,7 @@ import cv2
 import math
 import numpy as np
 from numpy.core.defchararray import index
+from nets.hed import HedLayer
 from utils.cv_util import empty, stackImages
 from config import edge_config, dft_rank_tbl
 
@@ -76,10 +77,13 @@ class EntireProcesser:
     def entire_image(self):
         pipe_base = self.pipe.sum() / 255
         self.level = 0
+        HED_layer = HedLayer()
         result = self.image.copy()
         blured = cv2.GaussianBlur(self.image, (7, 7), 1)
-        grayed = cv2.cvtColor(blured, cv2.COLOR_BGR2GRAY)
-        imgCanny = cv2.Canny(grayed, edge_config.get("canny_threshold1"), edge_config.get("canny_threshold2"))
+        # grayed = cv2.cvtColor(blured, cv2.COLOR_BGR2GRAY)
+        hed = HED_layer.forward(blured)
+        # cv2.imshow("hed", hed)
+        imgCanny = cv2.Canny(hed, edge_config.get("canny_threshold1"), edge_config.get("canny_threshold2"))
         kernel = np.ones((5, 5))
         imgDil = cv2.dilate(imgCanny, kernel, iterations=1) 
         min_area = edge_config.get("min_area")
