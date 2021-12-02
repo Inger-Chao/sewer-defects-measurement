@@ -231,14 +231,16 @@ def ShowImages(images):
 
 def ShowDatasets(path):
     print("Ready to Loading datasets: ",osp.abspath(path))
-    res_tables = np.zeros((5, 15))
-    acc_tables = np.zeros((5, 15))
+    res_tables = np.zeros((5, 16))
+    acc_tables = np.zeros((5, 16))
     categories = os.listdir(path);
     removeDStore(categories)
+    categories.sort()
     for type in categories:
         c_type_dir = osp.join(path, type)
         c_level_dirs = os.listdir(c_type_dir)
         removeDStore(c_level_dirs)
+        c_level_dirs.sort()
         for level in c_level_dirs:
             images = list()
             files_path = osp.join(c_type_dir, level)
@@ -255,8 +257,8 @@ def ShowDatasets(path):
 
 def getAllLevelAP(path):
     print("Ready to Loading datasets: ",osp.abspath(path))
-    res_tables = np.zeros((5, 15))
-    acc_tables = np.zeros((5, 15))
+    res_tables = np.zeros((5, 16))
+    acc_tables = np.zeros((5, 16))
     categories = os.listdir(path);
     removeDStore(categories)
     for type in categories:

@@ -4,11 +4,14 @@ from data_loader import videos_path, load_songbai_data
 from config import conf
 import numpy as np
 
+from utils.utils import printResults
+
 # for video in videos_path():
 #     ShowVideos(video)
 
 
 match, acc = ShowDatasets(conf.get("datasets"))
+printResults(acc)
 # print(match)
 # print(acc)
 # ShowImages(load_songbai_data())

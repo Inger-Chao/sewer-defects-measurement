@@ -407,3 +407,13 @@ def isVideoFile(filename):
 def removeDStore(filelist):
     if '.DS_Store' in filelist:
         filelist.remove('.DS_Store')
+
+def printResults(matrix):
+    matrix = np.delete(matrix, 0, axis=0)
+    matrix = np.delete(matrix, [0, 4, 5, 6, 10, 14], axis=1)
+    print("'chj'  'bx'  'zhaw'  'jg'  'shg'  'pl'  'zhgaj'  'cqbg'  'ywchr'  'fsh'")
+    for l in matrix:
+        for i in l:
+            print(i, end="  ")
+        print()
+
