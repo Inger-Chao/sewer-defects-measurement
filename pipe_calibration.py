@@ -145,13 +145,14 @@ def ShowVideos(video_path):
         try:
             frame = frame[100:frame.shape[0]-50, 50:frame.shape[1]]
         except:
+            print("[ERROR] Cut frame error")
             break
         mask, pipe = PipeCircle(frame)
         # result, features = yolo.detect_image(opencvToPIllow(frame))
         # result = pil2Opencv(result)
         # if features is None:
         thinker = EntireProcesser(pipe, frame)
-        result = thinker.entire_image()
+        result = thinker.entire_image(hed_flag=False)
         # else:
         #     for feat in features:
         #         dft = Defect(feat[0], frame[feat[1]:feat[3], feat[2]:feat[4]])
@@ -221,15 +222,39 @@ def ShowImages(images):
                 # break
 
         '''display results'''
-        # imgStack = stackImages(0.3, ([mask, result]))
-        # cv2.imshow(window_caption, imgStack)
-        # cv2.waitKey()
+        imgStack = stackImages(0.3, ([mask, result]))
+        cv2.imshow(window_caption, imgStack)
+        cv2.waitKey()
     cv2.destroyAllWindows()
     if (len(images)==0):
         return match, 0
     return match, round(match / len(images), 3)
 
-def ShowDatasets(path):
+'''基于HED边缘检测的缺陷评估方法'''
+def ProcesserWithoutYolo(images):
+    match = 0
+    for file in images:
+        # print('==>Processing: ', file)
+        image = cv2.imread(file)
+        mask, pipe = PipeCircle(image)
+        thinker = EntireProcesser(pipe, image)
+        result = thinker.entire_image(hed_flag=True)
+        if thinker.level == int(osp.basename(file).split("-")[1].split(".")[0]):
+            match += 1
+            # save_image('datasets/01-tmp/success/' + osp.basename(file), image)
+            # print('match')
+        else:
+            print('[ERROR] mismatch')
+        '''display results'''
+        imgStack = stackImages(0.3, ([mask, result]))
+        cv2.imshow(window_caption, imgStack)
+        cv2.waitKey()
+    cv2.destroyAllWindows()
+    if (len(images)==0):
+        return match, 0
+    return match, round(match / len(images), 3)
+
+def ShowDatasets(path, yolo_flag=True):
     print("Ready to Loading datasets: ",osp.abspath(path))
     res_tables = np.zeros((5, 16))
     acc_tables = np.zeros((5, 16))
@@ -249,7 +274,10 @@ def ShowDatasets(path):
             for image in filenames:
                 images.append(osp.join(files_path, image))
             # print("========> Imagesets initialized successfully for: ", type)
-            match, acc = ShowImages(images)
+            if yolo_flag:
+                match, acc = ShowImages(images)
+            else:
+                match, acc = ProcesserWithoutYolo(images)
             res_tables[int(level)][dft_rank_tbl[type]['id']] = match
             acc_tables[int(level)][dft_rank_tbl[type]['id']] = acc
             print("========> Accuracy for category {:s}: {:3F} with level {:s}, match: {:d}, total: {:d} <========".format(type, acc, level ,match, len(images)))

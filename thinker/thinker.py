@@ -69,21 +69,25 @@ class Thinker:
             except:
                 print('[ERROR][YOLO] Unsupported defect class: ', name)
 
+HED_layer = HedLayer()
+
 class EntireProcesser:
     def __init__(self, pipe, image) -> None:
         self.pipe = pipe
         self.image = image
     
-    def entire_image(self):
+    def entire_image(self, hed_flag=True):
         pipe_base = self.pipe.sum() / 255
         self.level = 0
-        HED_layer = HedLayer()
         result = self.image.copy()
         blured = cv2.GaussianBlur(self.image, (7, 7), 1)
-        # grayed = cv2.cvtColor(blured, cv2.COLOR_BGR2GRAY)
-        hed = HED_layer.forward(blured)
-        # cv2.imshow("hed", hed)
-        imgCanny = cv2.Canny(hed, edge_config.get("canny_threshold1"), edge_config.get("canny_threshold2"))
+        if hed_flag:
+            hed = HED_layer.forward(blured)
+            # cv2.imshow("hed", hed)
+            imgCanny = cv2.Canny(hed, edge_config.get("canny_threshold1"), edge_config.get("canny_threshold2"))
+        else:
+            grayed = cv2.cvtColor(blured, cv2.COLOR_BGR2GRAY)
+            imgCanny = cv2.Canny(grayed, edge_config.get("canny_threshold1"), edge_config.get("canny_threshold2"))
         kernel = np.ones((5, 5))
         imgDil = cv2.dilate(imgCanny, kernel, iterations=1) 
         min_area = edge_config.get("min_area")

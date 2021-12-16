@@ -28,7 +28,7 @@ class CropLayer(object):
 class HedLayer():
     def __init__(self) -> None:
         self.net = cv2.dnn.readNetFromCaffe("dl_model/deploy.prototxt", "dl_model/hed_pretrained_bsds.caffemodel")
-        # cv2.dnn_registerLayer('Crop', CropLayer)
+        cv2.dnn_registerLayer('Crop', CropLayer)
     
     def forward(self, image):
         image = cv2.resize(image, (image.shape[1], image.shape[0]))

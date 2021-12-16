@@ -9,9 +9,8 @@ from utils.utils import printResults
 # for video in videos_path():
 #     ShowVideos(video)
 
-
-match, acc = ShowDatasets(conf.get("datasets"))
-printResults(acc)
+match, acc = ShowDatasets(conf.get("datasets"), yolo_flag=False)
+# printResults(acc)
 # print(match)
 # print(acc)
 # ShowImages(load_songbai_data())

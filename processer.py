@@ -117,8 +117,8 @@ def main():
                     imgStack = stackImages(0.4, ([img, imgYolo],
                                                     [pipe, imgCopy]))
             else:
-                imgHED = hed.forward(img)
-                imgCanny = cv2.Canny(cv2.cvtColor(imgHED, cv2.COLOR_BGR2GRAY), canny_threshold1, canny_threshold2)
+                imgHED = hed.forward(blured)
+                imgCanny = cv2.Canny(imgHED, canny_threshold1, canny_threshold2)
                 kernel = np.ones((5, 5))
                 imgDil = cv2.dilate(imgCanny, kernel, iterations=1) 
                 cmp_level = getContours(imgDil, coefficient, pipe, imgCopy)
