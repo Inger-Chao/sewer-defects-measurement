@@ -55,7 +55,7 @@ def load_songbai_data():
 
 def videos_path():
     ret = []
-    path = "/Users/inger/projects/PycharmProjects/opencv_demo/videos/videos-10fps/"
+    path = "datasets/videos-10fps"
     videos = os.listdir(path)
     for filename in videos:
         video = os.path.join(path, filename)

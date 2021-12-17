@@ -20,7 +20,7 @@ font = cv2.FONT_HERSHEY_COMPLEX
 yolo = YOLO()
 
 global center
-window_caption = 'Pipe Calibrator'
+window_caption = 'Automated Pipeline Inspection and Evaluation'
 # cv2.namedWindow(window_caption)
 
 def Preprocess(frame):
@@ -196,13 +196,8 @@ def ShowImages(images):
                 detected.append(dft)
                 thinker = Thinker(pipe, detected)
                 thinker.defect_proportion()
-                # savepath = 'datasets/level-sewer10/bx/' + osp.basename(file).split('.')[0] + '-' + str(thinker.level) + '.jpg'
-                # print('[SUCCESS][SAVE] ', savepath)
-                # save_image(savepath, image)
                 if thinker.level == int(osp.basename(file).split("-")[1].split(".")[0]):
                     match += 1
-                    # save_image('datasets/01-tmp/success/' + osp.basename(file), image)
-                    # print('match')
                     break
         else:
             ''' Yolo fail to detect defects '''
@@ -212,14 +207,8 @@ def ShowImages(images):
             thinker = EntireProcesser(pipe, image)
             thinker.process_level(true_level)
             result = thinker.entire_image()
-            # savepath = 'datasets/level-sewer10/bx/' + osp.basename(file).split('.')[0] + '-' + str(level) + '.jpg'
-            # print('[SUCCESS][SAVE] ', savepath)
-            # save_image(savepath, image)
             if thinker.level == true_level:
                 match += 1
-                # save_image('datasets/01-tmp/success/' + osp.basename(file), image)
-                # print('match')
-                # break
 
         '''display results'''
         imgStack = stackImages(0.3, ([mask, result]))
@@ -241,8 +230,6 @@ def ProcesserWithoutYolo(images):
         result = thinker.entire_image(hed_flag=True)
         if thinker.level == int(osp.basename(file).split("-")[1].split(".")[0]):
             match += 1
-            # save_image('datasets/01-tmp/success/' + osp.basename(file), image)
-            # print('match')
         else:
             print('[ERROR] mismatch')
         '''display results'''
