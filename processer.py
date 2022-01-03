@@ -122,8 +122,8 @@ def main():
                 kernel = np.ones((5, 5))
                 imgDil = cv2.dilate(imgCanny, kernel, iterations=1) 
                 cmp_level = getContours(imgDil, coefficient, pipe, imgCopy)
-                imgStack = stackImages(0.4, ([imgYolo, imgCanny],
-                                                    [pipe, imgCopy]))
+                imgStack = stackImages(0.4, ([imgYolo, imgHED],
+                                            [pipe, imgCopy]))
             cv2.imshow("Parameters", imgStack)
             if cv2.waitKey() & 0xFF == ord("q"):
                 break

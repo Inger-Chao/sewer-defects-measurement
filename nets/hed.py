@@ -25,11 +25,12 @@ class CropLayer(object):
     def forward(self, inputs):
         return [inputs[0][:,:,self.ystart:self.yend,self.xstart:self.xend]]
 
+cv2.dnn_registerLayer('Crop', CropLayer)
+
 class HedLayer():
     def __init__(self) -> None:
         self.net = cv2.dnn.readNetFromCaffe("dl_model/deploy.prototxt", "dl_model/hed_pretrained_bsds.caffemodel")
-        cv2.dnn_registerLayer('Crop', CropLayer)
-    
+
     def forward(self, image):
         image = cv2.resize(image, (image.shape[1], image.shape[0]))
         inp = cv2.dnn.blobFromImage(image, scalefactor=1.0, size=(image.shape[1], image.shape[0]),
