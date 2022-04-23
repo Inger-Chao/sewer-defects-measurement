@@ -4,7 +4,7 @@
 
 conf = {
     "path": "datasets/songbai/label-only-pipe/pipe",
-    "datasets": "datasets/success"
+    "datasets": "datasets/level-sewer10"
 }
 
 yolo_config = {
