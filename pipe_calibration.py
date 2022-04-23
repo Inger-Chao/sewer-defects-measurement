@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2021-09-06 14:49
 # @Author  : Inger
+import imp
 from typing import Set
 import cv2
 import numpy as np
+import time
 import os
 import os.path as osp
 import random
@@ -119,7 +121,6 @@ def PipeCenterRestrictor(frame):
     circles = circles.reshape((circles.shape[1], circles.shape[2]))
     circles = sorted(circles, key=lambda circle:pixDis(circle[0], circle[1], frame.shape[1]/2, frame.shape[0]/2))
     circles = circles[0:len(circles)-1:100]
-    # drawCircle(frame, circles)
     '''
     circles[0] is the calibrated base value.
     return value.(i[0], i[1]) is center, and i[2] is radius.
@@ -127,7 +128,7 @@ def PipeCenterRestrictor(frame):
     '''
     return ReturnedCircle(mask, circles)
 
-def ShowVideos(video_path):
+def ShowVideos(video_path, yolo_flag=False):
     print("[INFO][PROCESSING]==>", video_path)
     cap = cv2.VideoCapture(video_path)
     
@@ -135,10 +136,18 @@ def ShowVideos(video_path):
     fps=cap.get(cv2.CAP_PROP_FPS)
     size=(cap.get(cv2.CAP_PROP_FRAME_WIDTH),cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     print("fps: {}\nsize: {}".format(fps,size))
-    
+
+    result_img_path = osp.join('result_log/video_res', osp.basename(video_path).split('.')[0])
+    if not osp.exists(result_img_path):
+        os.makedirs(result_img_path)
+    result_img_id = 0
+
     #读取视频时长（帧总数）
     total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     print("[INFO] {} total frames in video".format(total))
+    # 保存结果视频
+    # fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # 保存视频的编码
+    # out = cv2.VideoWriter('result_log/videos/'+osp.basename(video_path),fourcc, 10.0, (910,195))
     while True:
         ret, frame = cap.read()
         detected = []
@@ -148,20 +157,28 @@ def ShowVideos(video_path):
             print("[ERROR] Cut frame error")
             break
         mask, pipe = PipeCircle(frame)
-        # result, features = yolo.detect_image(opencvToPIllow(frame))
-        # result = pil2Opencv(result)
-        # if features is None:
-        thinker = EntireProcesser(pipe, frame)
-        result = thinker.entire_image(hed_flag=False)
-        # else:
-        #     for feat in features:
-        #         dft = Defect(feat[0], frame[feat[1]:feat[3], feat[2]:feat[4]])
-        #         detected.append(dft)
-        #         thinker = Thinker(pipe, detected)
-        #         thinker.defect_proportion()
-        #     result = frame
-
+        if yolo_flag:
+            result, features = yolo.detect_image(opencvToPIllow(frame))
+            result = pil2Opencv(result)
+            if features is None:
+                thinker = EntireProcesser(pipe, frame)
+                result = thinker.entire_image(hed_flag=False)
+            else:
+                for feat in features:
+                    dft = Defect(feat[0], frame[feat[1]:feat[3], feat[2]:feat[4]])
+                    detected.append(dft)
+                    thinker = Thinker(pipe, detected)
+                    thinker.defect_proportion()
+                result = frame
+        else:
+            thinker = EntireProcesser(pipe, frame)
+            result = thinker.entire_image(hed_flag=True)
+            if thinker.level > 0:
+                filename = result_img_path+'/'+str(++result_img_id)+'.png'
+                cv2.imwrite(filename,result)
+                
         imgStack = stackImages(0.5, ([mask, result]))
+        # out.write(imgStack)
         cv2.imshow(window_caption, imgStack)
 
         #--------键盘控制视频---------------
@@ -175,6 +192,7 @@ def ShowVideos(video_path):
             break
 
     cap.release()
+    # out.release()
     cv2.destroyAllWindows()
 
 def ShowImages(images):

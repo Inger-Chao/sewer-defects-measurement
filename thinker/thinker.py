@@ -76,6 +76,7 @@ class EntireProcesser:
         self.pipe = pipe
         self.image = image
     
+    # 可视化结果
     def entire_image(self, hed_flag=True):
         pipe_base = self.pipe.sum() / 255
         self.level = 0

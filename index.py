@@ -6,11 +6,11 @@ import numpy as np
 
 from utils.utils import printResults
 
-# for video in videos_path():
-#     ShowVideos(video)
+for video in videos_path():
+    ShowVideos(video,yolo_flag=False)
 
-match, acc = ShowDatasets(conf.get("datasets"), yolo_flag=False)
-printResults(acc)
+# match, acc = ShowDatasets(conf.get("datasets"), yolo_flag=True)
+# printResults(acc)
 # print(match)
 # print(acc)
 # ShowImages(load_songbai_data())
